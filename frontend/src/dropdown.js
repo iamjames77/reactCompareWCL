@@ -1,23 +1,29 @@
 import React, { useState, useEffect} from 'react';
 import './dropdown.css';
 
-function Dropdown({name, options, onSelectValue, getIcon, initialText, initialValue}) {
+function Dropdown({name, options, onSelectValue, getIcon, initialName, initialFight, initialType}) {
     const [value, setValue] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState(null);
 
     useEffect(() => {
-        if (initialValue) {
-          const initialOption = options.find(option => JSON.parse(option.value).id === initialValue);
+        if (initialFight) {
+          const initialOption = options.find(option => JSON.parse(option.value).id === initialFight);
           setSelectedOption(initialOption);
-          setValue(initialValue);
+          setValue(initialFight);
         }
-        else if (initialText) {
-            const initialOption = options.find(option => option.text === initialText);
+        else if (initialName) {
+            const initialOption = options.find(option => option.text === initialName);
             setSelectedOption(initialOption);
             setValue(initialOption.value);
         }
-      }, [initialValue, options]);
+        else if (initialType) {
+            const initialOption = options.find(option => JSON.parse(option.value) === initialType);
+            console.log(initialOption);
+            setSelectedOption(initialOption);
+            setValue(initialOption.value);
+        }
+      });
 
     const handleToggle = () => {
         setIsOpen(!isOpen);
