@@ -60,10 +60,15 @@ graph_query = """query($code: String, $sourceID: Int, $dtype: GraphDataType, $fi
             }
             }"""
 
-graph_query = """query($code: String, $sourceID: Int, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
+fightReport_query = """query($code: String, $difficulty: Int){
                 reportData{
                     report(code: $code){
-                        graph(sourceID: $sourceID, dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime)
+                        fights(difficulty: $difficulty){
+                            id
+                            encounterID
+                            startTime
+                            endTime
+                        }
                 }
             }
             }"""
