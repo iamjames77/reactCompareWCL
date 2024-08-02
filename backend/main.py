@@ -3,7 +3,7 @@ import os
 import requests
 import json
 import re
-from get_token import retrieve_headers, query, graph_query
+from get_token import retrieve_headers, query, graph_query, fightReport_query
 
 app = Flask(__name__, static_folder='../frontend/build')
 
@@ -42,6 +42,14 @@ def get_graph_data():
     response = get_api_data(graph_query, code=report, sourceID=source, fight=fight, dtype=dtype, startTime=startTime, endTime=endTime)
     return jsonify(response)
 
+@app.route('/get_fight_data', methods=['POST'])
+def get_fight_data():
+    data = request.get_json()
+    report = data.get('reportId')
+    print(report)
+    response = get_api_data(fightReport_query, code=report)
+    return jsonify(response)
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -51,21 +59,4 @@ def serve(path):
         return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
-    '''
-    URL = "https://www.warcraftlogs.com/reports/JAjWZM1xHPyVd8g9#fight=6&type=healing&source=18"
-    code, fight, dtype, source = parse_warcraft_logs_url(URL).values()
-    response = get_data(query, code=code, sourceID=source, fight=fight)
-    healEvent = response.get("data", {}).get("reportData", {}).get("report", {}).get("heal", {}).get("data", {})
-    startTime = response.get("data", {}).get("reportData", {}).get("report", {}).get("fights", [{}])[0].get("startTime")
-    endTime = response.get("data", {}).get("reportData", {}).get("report", {}).get("fights", [{}])[0].get("endTime")
-    healTable = response.get("data", {}).get("reportData", {}).get("report", {}).get("heal_table", {}).get("data", [])
-    castEvent = response.get("data", {}).get("reportData", {}).get("report", {}).get("casts", {}).get("data", {})
-    castTable = response.get("data", {}).get("reportData", {}).get("report", {}).get("cast_table", {}).get("data", [])
-    graph_response = get_data(graph_query, code=code, sourceID=source, fight=fight, dtype= dtype, startTime=startTime, endTime=endTime)
-    graphData = graph_response.get("data", {}).get("reportData", {}).get("report", {}).get("graph", {})
-    series = graphData['data']['series']
-    totalData = next((item for item in series if item['name'] == 'Total'), None)
-    print(castEvent)
-    '''
-    
     app.run(debug=True)

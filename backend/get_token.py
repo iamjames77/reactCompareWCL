@@ -42,7 +42,7 @@ query = """query($code: String, $sourceID: Int, $fight: Int){
                     buffs: events(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID){
                         data
                     }
-                    fights(fightIDs: [$fight]){
+                    fights{
                         startTime
                         endTime
                     }
@@ -60,12 +60,18 @@ graph_query = """query($code: String, $sourceID: Int, $dtype: GraphDataType, $fi
             }
             }"""
 
-fightReport_query = """query($code: String, $difficulty: Int){
+fightReport_query = """query($code: String){
                 reportData{
                     report(code: $code){
-                        fights(difficulty: $difficulty){
+                        fights{
                             id
+                            difficulty
+                            lastPhase
+                            lastPhaseIsIntermission
+                            name
                             encounterID
+                            bossPercentage
+                            kill
                             startTime
                             endTime
                         }
