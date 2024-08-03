@@ -1,30 +1,10 @@
 import './App.css';
 import Dropdown from './dropdown';
 import React, { useState } from 'react';
-import {get_data, get_fight_options} from './get_api_data';
+import {get_data, get_fight_options, get_player_data} from './get_api_data';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
-
-function urlIsValid(url) {
-  const pathSegments = url.pathname.split('/');
-  const reportId = pathSegments.length > 2 ? pathSegments[2] : null;
-
-  const hashParams = new URLSearchParams(url.hash.substring(1));
-
-  // 각 파라미터 값 추출
-  const fight = hashParams.has('fight') ? hashParams.get('fight') : null;
-  const originalType = hashParams.has('type') ? hashParams.get('type') : null;
-  const source = hashParams.has('source') ? hashParams.get('source') : null;
-
-  const type = originalType === 'damage-done' ? 'DamageDone' : originalType === 'healing' ? 'Healing' : originalType === 'casts' ? 'Casts' : null;
-
-  return {
-    reportId,
-    fight,
-    type,
-    source,
-  }
-}
+import specIconURL from './specIconURL';
 
 function splitByKey(data, key) {
   const result = {};
@@ -62,17 +42,14 @@ function App() {
   const [reportId, setReportId] = useState(null);
   const [fight, setFight] = useState(null);
   const [name, setName] = useState(null);
-  const [initialName, setInitialName] = useState(null);
   const [nameOptions, setNameOptions] = useState(null);
-  const [initialFight, setInitialFight] = useState(null);
   const [fightOptions, setFightOptions] = useState(null);
   const [type, setType] = useState(null);
   const [typeOptions, setTypeOptions] = useState(null);
-  const [initialType, setInitialType] = useState(null);
   const [source, setSource] = useState(null);
+  const [SourceIdOptions, setSourceIdOptions] = useState(null);
   const [responseData, setResponseData] = useState(null);
   const [error, setError] = useState('');
-  const [selectedName, setSelectedName] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
 
@@ -80,20 +57,45 @@ function App() {
     setInputValue(event.target.value);
   };
 
+  const handleSubmit = () => {
+    const reportId = inputValue;
+    setReportId(reportId);
+    if(reportId == null){
+      setError('Input reportId');
+      setResponseData(null);
+      return;
+    } else {
+      getFightOptions(reportId);
+      setError('');
+      setResponseData(null);
+      return;
+    }
+  };
+
+  const getFightOptions = (reportId) => {
+    get_fight_options(reportId).then(data => {
+      if (data.errors) {
+        setError(data.errors[0].message);
+        return;
+      }
+      const nameOptionsList = getKeyOptions(data.data.reportData.report.fights, 'name');
+      const filternameOptionList = nameOptionsList.map(item => ({
+        ...item,
+        text: item.text.split(',')[0].trim(),
+        imageURL: `https://assets.rpglogs.com/img/warcraft/bosses/${JSON.parse(item.value)[0].encounterID}-icon.jpg`,
+      }));
+      setNameOptions(filternameOptionList);  
+    });
+  }
+
   const setSelectedNameHandler = (selectedName) => {
     const selectedNameJson = JSON.parse(selectedName);
-    setName(selectedNameJson);
+    setName(selectedNameJson[0].name);
     setFightIdOption(selectedNameJson);
   }
 
   const setFightIdOption = (data) => {
-    const fightIdOptionList = getFightIdList(data);
-    setFightOptions(fightIdOptionList);
-  }
-
- const getFightIdList = (data) => {
     const killData = getKeyOptions(data, 'kill');
-    const result = null;
     const fightIdOPtion = killData.map(kill => {
       const killJson = JSON.parse(kill.value);
       return killJson.map(killData => {
@@ -111,7 +113,7 @@ function App() {
         }
       })
     });
-    return fightIdOPtion.flat();
+    setFightOptions(fightIdOPtion.flat().reverse());
   }
 
   const setSelectedFightHandler = (selectedFight) => {
@@ -126,92 +128,53 @@ function App() {
     const dTypeList = [
       {value: JSON.stringify('DamageDone'), text: 'Damage Done'},
       {value: JSON.stringify('Healing'), text: 'Healing'},
-      {value: JSON.stringify('Casts'), text: 'Casts'},
     ]
     setTypeOptions(dTypeList);
   }
 
   const setTypeHandler = (selectedType) => {
     setType(selectedType);
+    setSourceOptions();
   }
 
- 
-
-  const getFightOptions = (reportId, fight, type) => {
-    get_fight_options(reportId).then(data => {
+  const setSourceOptions = () => {
+    get_player_data(reportId, fight).then(data => {
       if (data.errors) {
         setError(data.errors[0].message);
         return;
       }
-      const nameOptionsList = getKeyOptions(data.data.reportData.report.fights, 'name');
-      const filternameOptionList = nameOptionsList.map(item => ({
-        ...item,
-        text: item.text.split(',')[0].trim()
-      }));
-      setNameOptions(filternameOptionList);
-      if (fight) {
-        filternameOptionList.forEach(boss => {
-          const bossJson = JSON.parse(boss.value);
-          bossJson.forEach(bossData => {
-            if(bossData.id === parseInt(fight)){
-              setInitialName(boss.text);
-              setFightIdOption(bossJson);
-              setInitialFight(bossData.id);
-              setStartTime(bossData.startTime);
-              setEndTime(bossData.endTime);
-            }
-          });
-        });
-      }
-      else{
-        setInitialName(null)
-      }
-      if (type) {
-        setDTypeOption();
-        setInitialType(type);
-      }
-      else{
-        setInitialType(null)
-      }
+      const tankList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.tanks, 'name');
+      const healerList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.healers, 'name');
+      const dpsList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.dps, 'name');
+      const sourceList = tankList.concat(healerList).concat(dpsList);
+      const sourceOptionList = sourceList.map(item => {
+        const JSONValue = JSON.parse(item.value)[0];
+        console.log(JSONValue);
+        const specIcon = specIconURL[JSONValue.type].find(spec => spec.spec === JSONValue.specs[0].spec).icon;
+        return {
+          value: JSON.stringify(JSONValue),
+          text: item.text,
+          imageURL: specIcon
+        };
+      });
+      console.log(sourceOptionList);
+      setSourceIdOptions(sourceOptionList);
     });
   }
 
-  
+  const setSourceHandler = (selectedSource) => {
+    setSource(JSON.parse(selectedSource).id);
+  }
 
-  const handleSubmit = () => {
-    const urlPattern = /^https:\/\/www\.warcraftlogs\.com\/reports\/([a-zA-Z0-9]+)#fight=(\d+)&type=([a-zA-Z]+)&source=(\d+)$/;
-    const originalInputValue = inputValue;
-    const url = new URL(inputValue);
-    const { reportId, fight, type, source } = urlIsValid(url);
-    setReportId(reportId);
-    setFight(fight);
-    setType(type);
-    setSource(source);
-    setNameOptions(null);
-    setFightOptions(null);
-    setTypeOptions(null);
-    if(reportId == null){
-      setError('Invalid URL format');
-      setResponseData(null);
-      return;
-    } else if (fight === null || type === null || source == null) {
-      getFightOptions(reportId, fight, type);
-      setError('');
-      setResponseData(null);
-      return;
-    }
-    else {
-      get_data(reportId, fight, type, source).then(data => {
-        if (data.errors) {
-          setError(data.errors[0].message);
-          return;
-        }
-        getFightOptions(reportId, fight);
-        setResponseData(data);
-        setError('');
-      });
-    }
-  };
+  const getData = () => {
+    get_data(reportId, fight, source).then(data => {
+      if (data.errors) {
+        setError(data.errors[0].message);
+        return;
+      }
+      setResponseData(data);
+    });
+  }
 
   return (
     <div className="App">
@@ -223,14 +186,18 @@ function App() {
         </div>
       </div>
       <div className="select">
+        {console.log(source)}
         {nameOptions && (
-          <Dropdown name='boss' options={nameOptions} onSelectValue={setSelectedNameHandler} getIcon={true} initialText={initialName}/>
+          <Dropdown name='boss' options={nameOptions} onSelectValue={setSelectedNameHandler} getIcon={true}/>
         )}
         {fightOptions && (
-          <Dropdown name='fight' options={fightOptions} onSelectValue={setSelectedFightHandler} getIcon={false} initialFight={initialFight}/>
+          <Dropdown name='fight' options={fightOptions} onSelectValue={setSelectedFightHandler} getIcon={false}/>
         )}
         {typeOptions && (
-          <Dropdown name='type' options={typeOptions} onSelectValue={setTypeHandler} getIcon={false} initialType={initialType}/>
+          <Dropdown name='type' options={typeOptions} onSelectValue={setTypeHandler} getIcon={false}/>
+        )}
+        {SourceIdOptions && (
+          <Dropdown name='source' options={SourceIdOptions} onSelectValue={setSourceHandler} getIcon={true}/>
         )}
       </div>
       {error && <p style={{ color: 'red' }}>{error}</p>}

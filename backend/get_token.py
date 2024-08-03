@@ -78,3 +78,11 @@ fightReport_query = """query($code: String){
                 }
             }
             }"""
+
+player_query = """query($code: String, $fight: Int){
+                reportData{
+                    report(code: $code){
+                        playerDetails(fightIDs: [$fight])
+                }
+            }
+            }"""

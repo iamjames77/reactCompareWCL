@@ -3,7 +3,7 @@ import os
 import requests
 import json
 import re
-from get_token import retrieve_headers, query, graph_query, fightReport_query
+from get_token import retrieve_headers, query, graph_query, fightReport_query, player_query
 
 app = Flask(__name__, static_folder='../frontend/build')
 
@@ -38,7 +38,7 @@ def get_data():
 
 @app.route('/get_graph_data')
 def get_graph_data():
-    report, fight, source, dtype, startTime, endTime = request.args.get('report'), request.args.get('fight'), request.args.get('source'), request.args.get('dtype'), request.args.get('startTime'), request.args.get('endTime')
+    report, fight, source, dtype, startTime, endTime = request.args.get('reportId'), request.args.get('fight'), request.args.get('source'), request.args.get('dtype'), request.args.get('startTime'), request.args.get('endTime')
     response = get_api_data(graph_query, code=report, sourceID=source, fight=fight, dtype=dtype, startTime=startTime, endTime=endTime)
     return jsonify(response)
 
@@ -46,8 +46,14 @@ def get_graph_data():
 def get_fight_data():
     data = request.get_json()
     report = data.get('reportId')
-    print(report)
     response = get_api_data(fightReport_query, code=report)
+    return jsonify(response)
+
+@app.route('/get_player_details', methods=['POST'])
+def get_player_details():
+    data = request.get_json()
+    report, fight = data.get('reportId'), data.get('fight')
+    response = get_api_data(player_query, code=report, fight =fight)
     return jsonify(response)
 
 @app.route('/', defaults={'path': ''})
