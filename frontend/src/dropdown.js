@@ -1,14 +1,14 @@
 import React, { useState, useEffect} from 'react';
 import './dropdown.css';
 
-function Dropdown({name, options, onSelectValue, getIcon, isChange}) {
+function Dropdown({name, options, onSelectValue, getIcon, isChange, initialOption}) {
     const [value, setValue] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState(null);
-    const [reset, setReset] = useState(isChange);
+    const [reset, setReset] = useState(!isChange);
 
     useEffect(() => {
-        setReset(isChange);
+        setReset(!isChange);
     }, [isChange]);
 
     const handleToggle = () => {
@@ -25,12 +25,12 @@ function Dropdown({name, options, onSelectValue, getIcon, isChange}) {
     return (
         <div className="dropdown">
             <div className="dropdown-header" onClick={handleToggle}>
-                {selectedOption ? (
+                {selectedOption && reset? (
                     <>
                         {getIcon && (
                             <img
                                 src={selectedOption.imageURL}
-                                alt={selectedOption.text}
+                                alt=""
                                 className="dropdown-icon"
                             />
                         )}
@@ -48,7 +48,7 @@ function Dropdown({name, options, onSelectValue, getIcon, isChange}) {
                             {getIcon && (
                                 <img
                                     src={option.imageURL}
-                                    alt={option.text}
+                                    alt=""
                                     className="dropdown-icon"
                                 />
                             )}

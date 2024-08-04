@@ -1,5 +1,4 @@
 export function get_data(reportId, fight, source) {
-  console.log(reportId, fight, source);
     return fetch('/get_data', {
       method: 'POST',
       headers: {
@@ -38,6 +37,22 @@ export function get_player_data(reportId, fight) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ reportId, fight }),
+    })
+      .then(response => response.json())
+      .then(data => {
+        return data;
+      }
+      )
+      .catch(err => console.error('Error fetching data'));
+}
+
+export function get_graph_data(reportId, fight, source, type, startTime, endTime) {
+    return fetch('/get_graph_data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ reportId, fight, source, type, startTime, endTime }),
     })
       .then(response => response.json())
       .then(data => {

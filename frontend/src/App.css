@@ -51,6 +51,11 @@
   gap: 10px;
 }
 
+.graph {
+  overflow-x:auto;
+  margin-top: 20px;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

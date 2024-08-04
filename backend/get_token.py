@@ -52,10 +52,38 @@ query = """query($code: String, $sourceID: Int, $fight: Int){
             }
             }"""
 
+ALL_query = """query($code: String, $fight: Int){
+            reportData{
+                report(code: $code){
+                    casts: events(fightIDs: [$fight], dataType: Casts){
+                        data
+                    }
+                    buffs: events(fightIDs: [$fight], dataType: Buffs){
+                        data
+                    }
+                    fights{
+                        startTime
+                        endTime
+                    }
+                    cast_table: table(fightIDs: [$fight], dataType: Casts)
+                    buff_table: table(fightIDs: [$fight], dataType: Buffs)
+                }
+            }
+            }"""
+
 graph_query = """query($code: String, $sourceID: Int, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
                 reportData{
                     report(code: $code){
                         graph(sourceID: $sourceID, dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime)
+                }
+            }
+            }"""
+
+
+ALL_graph_query = """query($code: String, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        graph(dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime)
                 }
             }
             }"""

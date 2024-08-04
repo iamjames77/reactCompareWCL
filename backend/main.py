@@ -3,7 +3,7 @@ import os
 import requests
 import json
 import re
-from get_token import retrieve_headers, query, graph_query, fightReport_query, player_query
+from get_token import retrieve_headers, query, graph_query, fightReport_query, player_query, ALL_query, ALL_graph_query
 
 app = Flask(__name__, static_folder='../frontend/build')
 
@@ -31,15 +31,22 @@ def get_api_data(query: str, **kwargs):
 @app.route('/get_data', methods=['POST'])
 def get_data():
     data = request.get_json()
-    reportId, fight, source = data.get('reportId'), int(data.get('fight')), int(data.get('source'))
-    response = get_api_data(query, code=reportId, sourceID=source, fight=fight)
-    print(reportId)
+    reportId, fight, source = data.get('reportId'), int(data.get('fight')), data.get('source')
+    if(source != 'ALL'):
+        response = get_api_data(query, code=reportId, sourceID=int(source), fight=fight)
+    else:
+        response = get_api_data(ALL_query, code=reportId, fight=fight)
     return jsonify(response)
 
-@app.route('/get_graph_data')
+@app.route('/get_graph_data', methods=['POST'])
 def get_graph_data():
-    report, fight, source, dtype, startTime, endTime = request.args.get('reportId'), request.args.get('fight'), request.args.get('source'), request.args.get('dtype'), request.args.get('startTime'), request.args.get('endTime')
-    response = get_api_data(graph_query, code=report, sourceID=source, fight=fight, dtype=dtype, startTime=startTime, endTime=endTime)
+    data = request.get_json()
+    report, fight, source, dtype, startTime, endTime = data.get('reportId'), int(data.get('fight')), data.get('source'), data.get('type'), float(data.get('startTime')), float(data.get('endTime'))
+    print(source)
+    if(source == 'ALL'):
+        response = get_api_data(ALL_graph_query, code=report, fight=fight, dtype=dtype, startTime=startTime, endTime=endTime)
+    else:
+        response = get_api_data(graph_query, code=report, sourceID=int(source), fight=fight, dtype=dtype, startTime=startTime, endTime=endTime)
     return jsonify(response)
 
 @app.route('/get_fight_data', methods=['POST'])
