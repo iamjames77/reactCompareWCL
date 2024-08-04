@@ -1,22 +1,25 @@
 import React, { useState, useEffect} from 'react';
 import './dropdown.css';
 
-function Dropdown({name, options, onSelectValue, getIcon, isChange, initialOption}) {
-    const [value, setValue] = useState('');
+function Dropdown({name, options, onSelectValue, getIcon, initialOption}) {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState(null);
-    const [reset, setReset] = useState(!isChange);
 
     useEffect(() => {
-        setReset(!isChange);
-    }, [isChange]);
+        setSelectedOption(null);
+        onSelectValue(null);
+        if (initialOption) {
+            const initial = options.find(option => option.text === initialOption);
+            setSelectedOption(initial);
+            onSelectValue(initial.value);
+        }
+    }, [options]);
 
     const handleToggle = () => {
         setIsOpen(!isOpen);
     };
 
-    const handleOptionClick = (option) => {
-        setValue(option.value);
+    const handleOptionClick = (option) => {;
         onSelectValue(option.value);
         setSelectedOption(option);
         setIsOpen(false);
@@ -25,7 +28,7 @@ function Dropdown({name, options, onSelectValue, getIcon, isChange, initialOptio
     return (
         <div className="dropdown">
             <div className="dropdown-header" onClick={handleToggle}>
-                {selectedOption && reset? (
+                {selectedOption ? (
                     <>
                         {getIcon && (
                             <img

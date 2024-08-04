@@ -6,7 +6,6 @@
 
 .App-header {
   background-color: #282c34;
-  margin: 30px;
   min-height: 10vh;
   display: flex;
   align-items: center; /* 수직 가운데 정렬 */
@@ -21,23 +20,26 @@
   padding-left: 20px; /* 왼쪽 여백 추가 */
 }
 
-.inputURL {
+.myInput {
+  position: absolute;
+  right: 50%;
+}
+
+.otherInput {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 10px; /* input과 button 사이의 간격 */
-  justify-content: center;
-  align-items: center;
 }
 
-.inputURL input {
-  width: 608px;
-  padding: 5px;
+.App-header input{
+  width: 300px;
+  margin: 6px;
+  padding: 10px;
 }
 
-.inputURL button {
-  padding: 5px;
+.App-header button {
+  position: absolute;
+  left: 50%;
+  margin: 340px;
 }
 
 .App-link {

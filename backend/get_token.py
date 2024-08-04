@@ -107,6 +107,25 @@ fightReport_query = """query($code: String){
             }
             }"""
 
+fightReport_query_with_encounterID = """query($code: String, $encounterID: Int){
+                reportData{
+                    report(code: $code){
+                        fights(encounterID: $encounterID){
+                            id
+                            difficulty
+                            lastPhase
+                            lastPhaseIsIntermission
+                            name
+                            encounterID
+                            bossPercentage
+                            kill
+                            startTime
+                            endTime
+                        }
+                }
+            }
+            }"""
+
 player_query = """query($code: String, $fight: Int){
                 reportData{
                     report(code: $code){

@@ -3,9 +3,10 @@ import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { parse } from '@fortawesome/fontawesome-svg-core';
 
-function ChartComponent({myGraphJSON, OtherGraphJSON, type}) {
+function ChartComponent({myGraphJSON, otherGraphJSON, type}) {
     const [myGraphData, setMyGraphData] = useState(null);
     const [otherGraphData, setOtherGraphData] = useState(null);
+    const [graphData, setGraphData] = useState(null);
     const [dataType, setDataType] = useState(null);
     const [timeLength, setTimeLength] = useState(0);
     const [chart, setChart] = useState(null);
@@ -37,29 +38,62 @@ function ChartComponent({myGraphJSON, OtherGraphJSON, type}) {
 
     // Load data initially
     useEffect(() => {
-        const name = myGraphJSON.name;
-        const graph = myGraphJSON.graph;
-        const myTimeLength = myGraphJSON.time;
-        const mySeries = Object.entries(graph).map( ([key,data]) => {
-            if(name === 'ALL' && data.id === 'Total'){
-                return;
-            }else {
-                return ({
-                    name: `${data.name}`,
-                    data: data.data.map((value, index) => [index * data.pointInterval, value]),
-                })
+        if (myGraphJSON) {
+            const name = myGraphJSON.name;
+            const graph = myGraphJSON.graph;
+            const myTimeLength = myGraphJSON.time;
+            const mySeries = Object.entries(graph).map( ([key,data]) => {
+                if(name === 'ALL' && data.id === 'Total'){
+                    return;
+                }else {
+                    return ({
+                        name: `${data.name}`,
+                        data: data.data.map((value, index) => [index * data.pointInterval, value]),
+                    })
+                }
+            }).filter(result => result !== undefined);
+            setMyGraphData(mySeries);
+            setDataType(type);
+            if(timeLength < myTimeLength){
+                setTimeLength(myTimeLength);
             }
-        }).filter(result => result !== undefined);
-        console.log(mySeries);
-        setMyGraphData(mySeries);
-        setDataType(type);
-        if(timeLength < myTimeLength){
-            setTimeLength(myTimeLength);
         }
     }, [myGraphJSON ,type]);
 
     useEffect(() => {
-        if (myGraphData && dataType && timeLength) {
+        if (otherGraphJSON){
+            const name = otherGraphJSON.name;
+            const graph = otherGraphJSON.graph;
+            const otherTimeLength = otherGraphJSON.time;
+            const otherSeries = Object.entries(graph).map( ([key,data]) => {
+                if(name === 'ALL' && data.id === 'Total'){
+                    return;
+                }else {
+                    return ({
+                        name: `other${data.name}`,
+                        data: data.data.map((value, index) => [index * data.pointInterval, value]),
+                    })
+                }
+            }).filter(result => result !== undefined);
+            setOtherGraphData(otherSeries);
+            if(timeLength < otherTimeLength){
+                setTimeLength(otherTimeLength);
+            }
+        }
+    }, [otherGraphJSON]);
+
+    useEffect(() => {
+        if(myGraphData){
+            setGraphData(myGraphData);
+            if(otherGraphData){
+                const newGraph = myGraphData.concat(otherGraphData);
+                setGraphData(newGraph);
+            }
+        }
+    }, [myGraphData, otherGraphData]);
+
+    useEffect(() => {
+        if (graphData && dataType && timeLength) {
             const dType = dataType === 'Healing' ? 'Hps' : 'Dps';
             const tickPositions = generateTickPositions(timeLength, 1000);
 
@@ -101,11 +135,11 @@ function ChartComponent({myGraphJSON, OtherGraphJSON, type}) {
                         return `<b>Time: ${timeStr}</b><br/>${this.series.name}: ${formatNumber(this.y)}`;
                     }
                 },
-                series: myGraphData
+                series: graphData
             };
             setChart(container);
         }
-    }, [myGraphData, dataType, timeLength]);
+    }, [graphData, dataType, timeLength]);
 
     const graphStyle ={
         overflowX : 'auto',
