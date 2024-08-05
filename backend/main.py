@@ -3,7 +3,7 @@ import os
 import requests
 import json
 import re
-from get_token import retrieve_headers, query, graph_query, fightReport_query, player_query, ALL_query, ALL_graph_query, fightReport_query_with_encounterID
+from get_token import retrieve_headers, query, graph_query, fightReport_query, player_query, ALL_query, ALL_graph_query, fightReport_query_with_encounterID, phase_query
 
 app = Flask(__name__, static_folder='../frontend/build')
 
@@ -69,6 +69,13 @@ def get_fight_data_with_encounterID():
     data = request.get_json()
     report, encounterID = data.get('reportID'), data.get('encounterID')
     response = get_api_data(fightReport_query_with_encounterID, code=report, encounterID=encounterID)
+    return jsonify(response)
+
+@app.route('/get_phase_info', methods=['POST'])
+def get_phase_info():
+    data = request.get_json()
+    report = data.get('reportID')
+    response = get_api_data(phase_query, code=report)
     return jsonify(response)
 
 @app.route('/', defaults={'path': ''})

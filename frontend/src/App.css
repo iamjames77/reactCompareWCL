@@ -30,7 +30,7 @@
   left: 50%;
 }
 
-.App-header input{
+.App-header input[type="text"] {
   width: 300px;
   margin: 6px;
   padding: 10px;
@@ -39,7 +39,15 @@
 .App-header button {
   position: absolute;
   left: 50%;
-  margin: 340px;
+  margin-left: 340px;
+  padding: 10px;
+}
+
+.checkBox {
+  position: absolute;
+  left: 50%;
+  margin-left: 430px;
+  padding: 10px;
 }
 
 .App-link {

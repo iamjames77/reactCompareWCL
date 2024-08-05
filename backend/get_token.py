@@ -96,6 +96,7 @@ fightReport_query = """query($code: String){
                             difficulty
                             lastPhase
                             lastPhaseIsIntermission
+                            phaseTransitions{id, startTime}
                             name
                             encounterID
                             bossPercentage
@@ -115,6 +116,7 @@ fightReport_query_with_encounterID = """query($code: String, $encounterID: Int){
                             difficulty
                             lastPhase
                             lastPhaseIsIntermission
+                            phaseTransitions{id, startTime}
                             name
                             encounterID
                             bossPercentage
@@ -130,6 +132,21 @@ player_query = """query($code: String, $fight: Int){
                 reportData{
                     report(code: $code){
                         playerDetails(fightIDs: [$fight])
+                }
+            }
+            }"""
+
+phase_query = """query($code: String){
+                reportData{
+                    report(code: $code){
+                        phases{
+                            encounterID
+                            phases{
+                                id
+                                name
+                                isIntermission
+                            }
+                        }
                 }
             }
             }"""

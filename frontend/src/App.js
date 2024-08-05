@@ -6,13 +6,18 @@ import ChartComponent from './ChartComponet';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import SetBossType from './SetBossType';
-import SetFightSource from './SetFightSource';
+import SetFightPhase from './SetFightPhase';
+import SetSource from './SetSource';
+import Scaling from './Scaling';
 
 function App() {
   const [inputMyValue, setInputMyValue] = useState('');
   const [inputOtherValue, setInputOtherValue] = useState('');
+  const [renderGraph, setRenderGraph] = useState(false);
+
   const [reportID, setReportID] = useState(null);
   const [otherReportID, setOtherReportID] = useState(null);
+
   const [name, setName] = useState(null);
   const [fight, setFight] = useState(null);
   const [otherFight, setOtherFight] = useState(null);
@@ -30,11 +35,15 @@ function App() {
   const [endTime, setEndTime] = useState(null);
   const [otherStartTime, setOtherStartTime] = useState(null);
   const [otherEndTime, setOtherEndTime] = useState(null);
+
   const [responseData, setResponseData] = useState(null);
   const [otherResponseData, setOtherResponseData] = useState(null);
   const [myGraphJSON, setMyGraphJSON] = useState(null);
   const [otherGraphJSON, setOtherGraphJSON] = useState(null);
 
+  const [timeLength, setTimeLength] = useState(null);
+  const [chartInterval, setChartInterval] = useState(null);
+  const [chartLeft, setChartLeft] = useState(null);
 
   // 입력 변경 시
   const myInputChange = (event) => {
@@ -43,6 +52,10 @@ function App() {
 
   const otherInputChange = (event) => {
     setInputOtherValue(event.target.value);
+  }
+
+  const renderGraphHandler = (event) => {
+    setRenderGraph(event.target.checked);
   }
 
   // URL 입력 후 버튼 클릭 시
@@ -96,22 +109,22 @@ function App() {
   }, [otherReportID, otherFight, otherSourceID]);
 
   useEffect(() => {
-    if (reportID && fight && sourceID && type && startTime && endTime) {
+    if (reportID && fight && sourceID && type && startTime && endTime && !renderGraph) {
       getGraphData(reportID, fight, sourceID, type, startTime, endTime, setGraphData);
     }
     else{
       setGraphData(null);
     }
-  }, [reportID, fight, sourceID, type, startTime, endTime]);
+  }, [reportID, fight, sourceID, type, startTime, endTime, renderGraph]);
 
   useEffect(() => {
-    if (otherReportID && otherFight && otherSourceID && type && otherStartTime && otherEndTime) {
+    if (otherReportID && otherFight && otherSourceID && type && otherStartTime && otherEndTime && !renderGraph) {
       getGraphData(otherReportID, otherFight, otherSourceID, type, otherStartTime, otherEndTime, setOtherGraphData);
     }
     else{
       setOtherGraphData(null);
     }
-  }, [otherReportID, otherFight, otherSourceID, type, otherStartTime, otherEndTime]);
+  }, [otherReportID, otherFight, otherSourceID, type, otherStartTime, otherEndTime, renderGraph]);
 
   useEffect(() => {
     if (graphData) {
@@ -133,6 +146,19 @@ function App() {
     }
   }, [otherGraphData])
 
+  useEffect(() => {
+    if(renderGraph && startTime && endTime){
+      setTimeLength(endTime - startTime);
+      if (otherStartTime && otherEndTime){
+        const newTimeLength = Math.max(endTime - startTime, otherEndTime - otherStartTime);
+        setTimeLength(newTimeLength);
+      }
+      setChartInterval(100);
+      setChartLeft(92);
+
+    }
+  }, [renderGraph, startTime, endTime, otherStartTime, otherEndTime, timeLength, chartInterval, chartLeft]);
+
   return (
     <div className="App">
       <div className="App-header">
@@ -140,7 +166,11 @@ function App() {
         <input className="myInput" type="text" value={inputMyValue} onChange={myInputChange} placeholder="Enter Your ReportID" />
         <input className="otherInput" type="text" value={inputOtherValue} onChange={otherInputChange} placeholder="Enter Other ReportID" />
         <button onClick={handleSubmit}><FontAwesomeIcon icon={faSearch} /></button>
+        <label class="checkBox"> Not Render Graph
+          <input type="checkbox" checked={renderGraph} onChange={renderGraphHandler}/>
+        </label>
       </div>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       <div>
         {reportID && (
           <SetBossType ReportID={reportID} SetError={setError} SetName={setName} SetType={setType} SetFightIDOptions={setFightIDoptions}/>
@@ -148,22 +178,39 @@ function App() {
         <div style={{display:'flex'}}>
           <div style={{width:'50%'}}>
             {fightIDoptions && (
-              <SetFightSource ReportID={reportID} SetError={setError} FightIDOptions={fightIDoptions} SetFightID={setFight} SetSourceID={setSourceID} SetSourceName={setSourceName} SetStartTime={setStartTime} SetEndTime={setEndTime}/>
+              <SetFightPhase ReportID={reportID} SetError={setError} FightIDOptions={fightIDoptions} SetFightID={setFight} SetStartTime={setStartTime} SetEndTime={setEndTime}/>
             )}
           </div>
           <div style={{width:'50%'}}>
-          {otherFightIDoptions && (
-            <SetFightSource ReportID={otherReportID} SetError={setError} FightIDOptions={otherFightIDoptions} SetFightID={setOtherFight} SetSourceID={setOtherSourceID}
-            SetSourceName={setOtherSourceName} SetStartTime={setOtherStartTime} SetEndTime={setOtherEndTime}/>
-          )}
+            {otherFightIDoptions && (
+              <SetFightPhase ReportID={otherReportID} SetError={setError} FightIDOptions={otherFightIDoptions} SetFightID={setOtherFight} SetStartTime={setOtherStartTime} SetEndTime={setOtherEndTime}/>
+            )}
+          </div>
+        </div>
+        <div style={{display:'flex'}}>
+          <div style={{width:'50%'}}>
+            {startTime && endTime && (
+              <SetSource ReportID={reportID} fightID={fight} SetError={setError} SetSourceID={setSourceID} SetSourceName={setSourceName}/>
+            )}
+          </div>
+          <div style={{width:'50%'}}>
+            {otherStartTime && otherEndTime && (
+              <SetSource ReportID={otherReportID} fightID={otherFight} SetError={setError} SetSourceID={setOtherSourceID} SetSourceName={setOtherSourceName}/>
+            )}
           </div>
         </div>
       </div>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
       <div className= "graph">
         {myGraphJSON && (
-          <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} type={type} />
+          <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} type={type} SetTimeLength= {setTimeLength} SetChartInterval={setChartInterval} SetChartLeft={setChartLeft}/>
         )}
+        {timeLength && chartInterval && chartLeft && sourceID &&(
+          <Scaling timeLength={timeLength} chartInterval={chartInterval} chartLeft={chartLeft}/>
+        )}
+      </div>
+      <div>
+        {console.log(myGraphJSON)}
+        {responseData && console.log(responseData)}
       </div>
     </div>
   );

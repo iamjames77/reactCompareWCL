@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {get_fight_options, get_player_data} from './get_api_data';
+import {get_fight_options, getKeyOptions} from './get_api_data';
 import Dropdown from './dropdown';
 
 function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) {
@@ -15,6 +15,7 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
             SetError('input a report id');
             return;
         }
+        SetError('');
        getNameOptions(reportID);
     }, [reportID]);
 
@@ -24,6 +25,7 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
             SetError(data.errors[0].message);
             return;
           }
+          SetError('');
           const nameOptionsList = getKeyOptions(data.data.reportData.report.fights, 'name');
           const filternameOptionList = nameOptionsList.map(item => ({
             ...item,
@@ -59,37 +61,6 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
     const setTypeHandler = (selectedType) => {
         setType(selectedType);
         SetType(selectedType);
-    }
-
-    function splitByKey(data, key) {
-        const result = {};
-        const keySet = new Set();
-      
-        data.forEach(item => {
-            const keyValue = item[key];
-            if (item.difficulty === null){
-              return;
-            }
-      
-            if (!result[keyValue]) {
-                result[keyValue] = [];
-            }
-            result[keyValue].push(item);
-            keySet.add(keyValue);
-        });
-      
-        return { groupedData: result, keyList: Array.from(keySet) };
-    }
-
-    function getKeyOptions(data, key){
-        const {groupedData, keyList} = splitByKey(data, key);
-        const keyOptions = keyList.map(key => {
-          return {
-            value: JSON.stringify(groupedData[key]),
-            text: key,
-          }
-        });
-        return keyOptions;
     }
 
     const selectStyle = {
