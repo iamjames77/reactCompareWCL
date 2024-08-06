@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {get_phase_info, getKeyOptions} from './get_api_data';
 import Dropdown from './dropdown';
 
-function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStartTime, SetEndTime}) {
+function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStartTime, SetEndTime, existOnly}) {
     const [fightID, setFightID] = useState(null);
     const [fightIDOptions, setFightIDOptions] = useState(null);
     const [InitialFightID, setInitialFightID] = useState(null);
@@ -15,6 +15,9 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
     const [phaseList, setPhaseList] = useState(null);
     const [phaseIDOptions, setPhaseIDOptions] = useState(null);
     const [initialPhaseID, setInitialPhaseID] = useState(null);
+
+    const [exist, setExist] = useState(existOnly);
+
     useEffect(() => {
         preprocessingFightOption(FightIDOptions);
     }, [FightIDOptions]);
@@ -82,15 +85,12 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
             }).filter(item => item !== undefined);
             
             const ObjectPhaseInfo = Object.values(phaseInfo);
-            console.log(ObjectPhaseInfo[0]);
             const result = [];
             result.push({
                 value: JSON.stringify({startTime: fightstartTime, endTIme:fightendTime}),
                 text: 'All Phases',
             })
             for (let i= 0; i< ObjectPhaseInfo.length; i++){
-                console.log(ObjectPhaseInfo[i]);
-                console.log(ObjectPhaseInfo[i].startTime);
                 if (i === ObjectPhaseInfo.length -1) {
                     result.push({
                         value: JSON.stringify({startTime: ObjectPhaseInfo[i].startTime, endTIme:fightendTime}),
@@ -125,19 +125,19 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
     }
 
     const dropdownStyle = {
-        width: 'calc(50% - 9px)', /* 전체 너비 */
+        width: exist ? 'calc(50% - 12px)' : 'calc(50% - 9px)', /* 전체 너비 */
         margin: '6px',
     }
 
     return (
         <div style={selectStyle}>
             {fightIDOptions && (
-                <div style={{...dropdownStyle, marginRight: '3px'}}>
+                <div style={{...dropdownStyle, marginRight: exist? '6px' : '3px'}}>
                     <Dropdown name="Fight" options={fightIDOptions} onSelectValue={setFightHandler} getIcon={false} initialOption={InitialFightID}/>
                 </div>
             )}
             {phaseIDOptions && (
-                <div style={{...dropdownStyle, marginLeft: '3px'}}>
+                <div style={{...dropdownStyle, marginLeft: exist?'6px': '3px'}}>
                     <Dropdown name="Phase" options={phaseIDOptions} onSelectValue={setPhaseHandler} getIcon={false} initialOption={initialPhaseID}/>
                 </div>
             )}

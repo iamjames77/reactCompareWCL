@@ -51,6 +51,7 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
                 return ({
                     name: `${data.name}`,
                     data: data.data.map((value, index) => [index * data.pointInterval, value]),
+                    visible: (data.name === 'Total' ? true : false)
                 })   
             }).filter(result => result !== undefined);
             setMyGraphData(mySeries);
@@ -72,6 +73,7 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
                 return ({
                     name: `other${data.name}`,
                     data: data.data.map((value, index) => [index * data.pointInterval, value]),
+                    visible: (data.name === 'Total' ? true : false)
                 })
             }).filter(result => result !== undefined);
             setOtherGraphData(otherSeries);

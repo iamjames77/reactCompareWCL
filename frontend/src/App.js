@@ -13,7 +13,7 @@ import Scaling from './Scaling';
 function App() {
   const [inputMyValue, setInputMyValue] = useState('');
   const [inputOtherValue, setInputOtherValue] = useState('');
-  const [renderGraph, setRenderGraph] = useState(false);
+  const [notRenderGraph, setNotRenderGraph] = useState(false);
 
   const [reportID, setReportID] = useState(null);
   const [otherReportID, setOtherReportID] = useState(null);
@@ -54,8 +54,8 @@ function App() {
     setInputOtherValue(event.target.value);
   }
 
-  const renderGraphHandler = (event) => {
-    setRenderGraph(event.target.checked);
+  const notRenderGraphHandler = (event) => {
+    setNotRenderGraph(event.target.checked);
   }
 
   // URL 입력 후 버튼 클릭 시
@@ -109,22 +109,22 @@ function App() {
   }, [otherReportID, otherFight, otherSourceID]);
 
   useEffect(() => {
-    if (reportID && fight && sourceID && type && startTime && endTime && !renderGraph) {
+    if (reportID && fight && sourceID && type && startTime && endTime && !notRenderGraph) {
       getGraphData(reportID, fight, sourceID, type, startTime, endTime, setGraphData);
     }
     else{
       setGraphData(null);
     }
-  }, [reportID, fight, sourceID, type, startTime, endTime, renderGraph]);
+  }, [reportID, fight, sourceID, type, startTime, endTime, notRenderGraph]);
 
   useEffect(() => {
-    if (otherReportID && otherFight && otherSourceID && type && otherStartTime && otherEndTime && !renderGraph) {
+    if (otherReportID && otherFight && otherSourceID && type && otherStartTime && otherEndTime && !notRenderGraph) {
       getGraphData(otherReportID, otherFight, otherSourceID, type, otherStartTime, otherEndTime, setOtherGraphData);
     }
     else{
       setOtherGraphData(null);
     }
-  }, [otherReportID, otherFight, otherSourceID, type, otherStartTime, otherEndTime, renderGraph]);
+  }, [otherReportID, otherFight, otherSourceID, type, otherStartTime, otherEndTime, notRenderGraph]);
 
   useEffect(() => {
     if (graphData) {
@@ -147,7 +147,7 @@ function App() {
   }, [otherGraphData])
 
   useEffect(() => {
-    if(renderGraph && startTime && endTime){
+    if(notRenderGraph && startTime && endTime){
       setTimeLength(endTime - startTime);
       if (otherStartTime && otherEndTime){
         const newTimeLength = Math.max(endTime - startTime, otherEndTime - otherStartTime);
@@ -157,7 +157,11 @@ function App() {
       setChartLeft(92);
 
     }
-  }, [renderGraph, startTime, endTime, otherStartTime, otherEndTime, timeLength, chartInterval, chartLeft]);
+  }, [notRenderGraph, startTime, endTime, otherStartTime, otherEndTime, timeLength, chartInterval, chartLeft]);
+
+  useEffect(() => {
+    console.log(chartLeft, chartInterval, timeLength);
+  }, [chartLeft, chartInterval, timeLength]);
 
   return (
     <div className="App">
@@ -167,7 +171,7 @@ function App() {
         <input className="otherInput" type="text" value={inputOtherValue} onChange={otherInputChange} placeholder="Enter Other ReportID" />
         <button onClick={handleSubmit}><FontAwesomeIcon icon={faSearch} /></button>
         <label class="checkBox"> Not Render Graph
-          <input type="checkbox" checked={renderGraph} onChange={renderGraphHandler}/>
+          <input type="checkbox" checked={notRenderGraph} onChange={notRenderGraphHandler}/>
         </label>
       </div>
       {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -176,41 +180,37 @@ function App() {
           <SetBossType ReportID={reportID} SetError={setError} SetName={setName} SetType={setType} SetFightIDOptions={setFightIDoptions}/>
         )}
         <div style={{display:'flex'}}>
-          <div style={{width:'50%'}}>
+          <div style={{width: otherFightIDoptions ? '50%' : '100%'}}>
             {fightIDoptions && (
-              <SetFightPhase ReportID={reportID} SetError={setError} FightIDOptions={fightIDoptions} SetFightID={setFight} SetStartTime={setStartTime} SetEndTime={setEndTime}/>
+              <SetFightPhase ReportID={reportID} SetError={setError} FightIDOptions={fightIDoptions} SetFightID={setFight} SetStartTime={setStartTime} SetEndTime={setEndTime} existOnly={!otherFightIDoptions}/>
             )}
           </div>
-          <div style={{width:'50%'}}>
+          <div style={{width: otherFightIDoptions ? '50%' : '0%'}}>
             {otherFightIDoptions && (
               <SetFightPhase ReportID={otherReportID} SetError={setError} FightIDOptions={otherFightIDoptions} SetFightID={setOtherFight} SetStartTime={setOtherStartTime} SetEndTime={setOtherEndTime}/>
             )}
           </div>
         </div>
         <div style={{display:'flex'}}>
-          <div style={{width:'50%'}}>
+          <div style={{width: otherFightIDoptions ? '50%' : '100%'}}>
             {startTime && endTime && (
               <SetSource ReportID={reportID} fightID={fight} SetError={setError} SetSourceID={setSourceID} SetSourceName={setSourceName}/>
             )}
           </div>
-          <div style={{width:'50%'}}>
+          <div style={{width: otherFightIDoptions ? '50%' : '0%'}}>
             {otherStartTime && otherEndTime && (
               <SetSource ReportID={otherReportID} fightID={otherFight} SetError={setError} SetSourceID={setOtherSourceID} SetSourceName={setOtherSourceName}/>
             )}
           </div>
         </div>
       </div>
-      <div className= "graph">
+      <div style= {{overflowX: 'auto', marginLeft:'6px', marginRight:'6px'}}>
         {myGraphJSON && (
           <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} type={type} SetTimeLength= {setTimeLength} SetChartInterval={setChartInterval} SetChartLeft={setChartLeft}/>
         )}
         {timeLength && chartInterval && chartLeft && sourceID &&(
           <Scaling timeLength={timeLength} chartInterval={chartInterval} chartLeft={chartLeft}/>
         )}
-      </div>
-      <div>
-        {console.log(myGraphJSON)}
-        {responseData && console.log(responseData)}
       </div>
     </div>
   );
