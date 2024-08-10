@@ -42,9 +42,8 @@ query = """query($code: String, $sourceID: Int, $fight: Int){
                     buffs: events(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID){
                         data
                     }
-                    fights{
-                        startTime
-                        endTime
+                    fights(fightIDs: [$fight]){
+                        enemyNPCs{gameID, id}
                     }
                     cast_table: table(fightIDs: [$fight], dataType: Casts, sourceID: $sourceID)
                     buff_table: table(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID)
@@ -55,18 +54,9 @@ query = """query($code: String, $sourceID: Int, $fight: Int){
 ALL_query = """query($code: String, $fight: Int){
             reportData{
                 report(code: $code){
-                    casts: events(fightIDs: [$fight], dataType: Casts){
-                        data
+                    fights(fightIDs: [$fight]){
+                        enemyNPCs{gameID, id}
                     }
-                    buffs: events(fightIDs: [$fight], dataType: Buffs){
-                        data
-                    }
-                    fights{
-                        startTime
-                        endTime
-                    }
-                    cast_table: table(fightIDs: [$fight], dataType: Casts)
-                    buff_table: table(fightIDs: [$fight], dataType: Buffs)
                 }
             }
             }"""
@@ -146,6 +136,16 @@ phase_query = """query($code: String){
                                 name
                                 isIntermission
                             }
+                        }
+                }
+            }
+            }"""
+
+enemy_query = """query($code: String, $fight: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        events(fightIDs: [$fight], hostilityType: Enemies, dataType: Casts, startTime: $startTime, endTime: $endTime){
+                            data
                         }
                 }
             }

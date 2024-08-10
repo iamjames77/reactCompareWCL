@@ -3,7 +3,7 @@ import os
 import requests
 import json
 import re
-from get_token import retrieve_headers, query, graph_query, fightReport_query, player_query, ALL_query, ALL_graph_query, fightReport_query_with_encounterID, phase_query
+from get_token import *
 
 app = Flask(__name__, static_folder='../frontend/build')
 
@@ -43,7 +43,7 @@ def get_graph_data():
     data = request.get_json()
     report, fight, source, dtype, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), data.get('type'), float(data.get('startTime')), float(data.get('endTime'))
     print(source)
-    if(source == 'ALL'):
+    if((source == 'ALL') or (dtype == 'DamageTaken')):
         response = get_api_data(ALL_graph_query, code=report, fight=fight, dtype=dtype, startTime=startTime, endTime=endTime)
     else:
         response = get_api_data(graph_query, code=report, sourceID=int(source), fight=fight, dtype=dtype, startTime=startTime, endTime=endTime)
@@ -76,6 +76,14 @@ def get_phase_info():
     data = request.get_json()
     report = data.get('reportID')
     response = get_api_data(phase_query, code=report)
+    return jsonify(response)
+
+@app.route('/get_enemy_data', methods=['POST'])
+def get_enemy_data():
+    data = request.get_json()
+    print(data)
+    report, fight, startTime, endTime = data.get('reportID'), int(data.get('fight')), float(data.get('startTime')), float(data.get('endTime'))
+    response = get_api_data(enemy_query, code=report, fight =fight)
     return jsonify(response)
 
 @app.route('/', defaults={'path': ''})

@@ -17,6 +17,7 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
         }
         SetError('');
        getNameOptions(reportID);
+       setDTypeOption();
     }, [reportID]);
 
     const getNameOptions = (reportID) => {
@@ -43,7 +44,6 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
             setName(selectedNameJson[0].encounterID);
             SetName(selectedNameJson[0].encounterID);
             SetFightIDOptions(selectedNameJson);
-            setDTypeOption();
         }
     }
 

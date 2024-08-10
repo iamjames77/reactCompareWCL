@@ -10,8 +10,10 @@ function Dropdown({name, options, onSelectValue, getIcon, initialOption}) {
         onSelectValue(null);
         if (initialOption) {
             const initial = options.find(option => option.text === initialOption);
-            setSelectedOption(initial);
-            onSelectValue(initial.value);
+            if(initial) {
+                setSelectedOption(initial);
+                onSelectValue(initial.value);
+            }
         }
     }, [options]);
 

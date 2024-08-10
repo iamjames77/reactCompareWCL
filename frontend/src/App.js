@@ -1,7 +1,7 @@
 import './App.css';
 import Dropdown from './dropdown';
 import React, { useState, useEffect } from 'react';
-import {get_data, get_fight_options, get_player_data, get_graph_data, get_fight_data_with_encounterID} from './get_api_data';
+import {get_data, get_player_data, get_graph_data, get_fight_data_with_encounterID, get_enemy_data} from './get_api_data';
 import ChartComponent from './ChartComponet';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
@@ -29,7 +29,9 @@ function App() {
   const [otherSourceID, setOtherSourceID] = useState(null);
   const [otherSourceName, setOtherSourceName] = useState(null);
   const [graphData, setGraphData] = useState(null);
+  const [DTData, setDTData] = useState(null);
   const [otherGraphData, setOtherGraphData] = useState(null);
+  const [otherDTData, setOtherDTData] = useState(null);
   const [error, setError] = useState('');
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
@@ -40,6 +42,8 @@ function App() {
   const [otherResponseData, setOtherResponseData] = useState(null);
   const [myGraphJSON, setMyGraphJSON] = useState(null);
   const [otherGraphJSON, setOtherGraphJSON] = useState(null);
+  const [DTGraphJSON, setDTGraphJSON] = useState(null);
+  const [otherDTGraphJSON, setOtherDTGraphJSON] = useState(null);
 
   const [timeLength, setTimeLength] = useState(null);
   const [chartInterval, setChartInterval] = useState(null);
@@ -82,6 +86,7 @@ function App() {
         setError(data.errors[0].message);
         return;
       }
+      console.log(data);
       rD(data);
     });
   }
@@ -111,6 +116,9 @@ function App() {
   useEffect(() => {
     if (reportID && fight && sourceID && type && startTime && endTime && !notRenderGraph) {
       getGraphData(reportID, fight, sourceID, type, startTime, endTime, setGraphData);
+      if (type === 'Healing'){
+        getGraphData(reportID, fight, 'ALL', 'DamageTaken', startTime, endTime, setDTData);
+      }
     }
     else{
       setGraphData(null);
@@ -120,6 +128,9 @@ function App() {
   useEffect(() => {
     if (otherReportID && otherFight && otherSourceID && type && otherStartTime && otherEndTime && !notRenderGraph) {
       getGraphData(otherReportID, otherFight, otherSourceID, type, otherStartTime, otherEndTime, setOtherGraphData);
+      if(type === 'Healing'){
+        getGraphData(otherReportID, otherFight, 'ALL', 'DamageTaken', otherStartTime, otherEndTime, setOtherDTData);
+      }
     }
     else{
       setOtherGraphData(null);
@@ -134,7 +145,30 @@ function App() {
         time: endTime - startTime
       });
     }
-  }, [graphData])
+  }, [graphData]);
+
+  useEffect(() => {
+    if (DTData) {
+      setDTGraphJSON({
+        name: sourceName,
+        graph: DTData.data.reportData.report.graph.data.series.find(item => item.id === 'Total'),
+        time: endTime - startTime
+      });
+    }
+  },[DTData]);
+
+  useEffect(() => {
+    if (fight && startTime && endTime) {
+      get_enemy_data(reportID, fight, startTime, endTime).then(data => {
+        if (data.errors) {
+          setError(data.errors[0].message);
+          return;
+        }
+        console.log(data);
+      }
+    )}
+  }, [fight, startTime, endTime]);
+
 
   useEffect(() => {
     if (otherGraphData) {
@@ -145,6 +179,16 @@ function App() {
       });
     }
   }, [otherGraphData])
+
+  useEffect(() => {
+    if (otherDTData) {
+      setOtherDTGraphJSON({
+        name: sourceName,
+        graph: otherDTData.data.reportData.report.graph.data.series.find(item => item.id === 'Total'),
+        time: endTime - startTime
+      });
+    }
+  },[otherDTData]);
 
   useEffect(() => {
     if(notRenderGraph && startTime && endTime){
@@ -160,8 +204,8 @@ function App() {
   }, [notRenderGraph, startTime, endTime, otherStartTime, otherEndTime, timeLength, chartInterval, chartLeft]);
 
   useEffect(() => {
-    console.log(chartLeft, chartInterval, timeLength);
-  }, [chartLeft, chartInterval, timeLength]);
+    console.log(DTGraphJSON);
+  }, [DTGraphJSON]);
 
   return (
     <div className="App">
@@ -206,7 +250,7 @@ function App() {
       </div>
       <div style= {{overflowX: 'auto', marginLeft:'6px', marginRight:'6px'}}>
         {myGraphJSON && (
-          <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} type={type} SetTimeLength= {setTimeLength} SetChartInterval={setChartInterval} SetChartLeft={setChartLeft}/>
+          <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} myDTGraphJSON={DTGraphJSON} otherDTGraphJSON={otherDTGraphJSON} type={type} SetTimeLength= {setTimeLength} SetChartInterval={setChartInterval} SetChartLeft={setChartLeft}/>
         )}
         {timeLength && chartInterval && chartLeft && sourceID &&(
           <Scaling timeLength={timeLength} chartInterval={chartInterval} chartLeft={chartLeft}/>

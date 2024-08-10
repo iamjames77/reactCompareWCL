@@ -1,10 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Highcharts, { time } from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
-import Scaling from './Scaling';
-import { parse } from '@fortawesome/fontawesome-svg-core';
 
-function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetChartInterval, SetChartLeft}) {
+function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetChartInterval, SetChartLeft, myDTGraphJSON, otherDTGraphJSON}) {
     const [myGraphData, setMyGraphData] = useState(null);
     const [otherGraphData, setOtherGraphData] = useState(null);
     const [graphData, setGraphData] = useState(null);
@@ -54,15 +52,23 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
                     visible: (data.name === 'Total' ? true : false)
                 })   
             }).filter(result => result !== undefined);
+            if (type === 'Healing' && myDTGraphJSON){
+                console.log('DTGraph');
+                const myDTGraph = myDTGraphJSON.graph;
+                const myDTGraphData = {
+                    name: `Damage Taken`,
+                    data: myDTGraph.data.map((value, index) => [index * myDTGraph.pointInterval, value]),
+                    visible: true
+                }
+                mySeries.push(myDTGraphData);
+            }
             setMyGraphData(mySeries);
             setDataType(type);
-            if(timeLength < myTimeLength){
-                const newTimeLength = Math.ceil(myTimeLength/1000) * 1000;
-                setTimeLength(newTimeLength);
-                SetTimeLength(newTimeLength);
-            }
+            const newTimeLength = Math.ceil(myTimeLength/1000) * 1000;
+            setTimeLength(newTimeLength);
+            SetTimeLength(newTimeLength);
         }
-    }, [myGraphJSON ,type]);
+    }, [myGraphJSON, myDTGraphJSON ,type]);
 
     useEffect(() => {
         if (otherGraphJSON){
@@ -71,11 +77,20 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
             const otherTimeLength = otherGraphJSON.time;
             const otherSeries = Object.entries(graph).map( ([key,data]) => {
                 return ({
-                    name: `other${data.name}`,
+                    name: `'${data.name}`,
                     data: data.data.map((value, index) => [index * data.pointInterval, value]),
                     visible: (data.name === 'Total' ? true : false)
                 })
             }).filter(result => result !== undefined);
+            if(type === 'Healing' && otherDTGraphJSON){
+                const otherDTGraph = otherDTGraphJSON.graph;
+                const otherDTGraphData = {
+                    name: `'Damage Taken`,
+                    data: otherDTGraph.data.map((value, index) => [index * otherDTGraph.pointInterval, value]),
+                    visible: true
+                }
+                otherSeries.push(otherDTGraphData);
+            }
             setOtherGraphData(otherSeries);
             if(timeLength < otherTimeLength){
                 const newTimeLength = Math.ceil(otherTimeLength/1000) * 1000;
@@ -83,15 +98,17 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
                 SetTimeLength(newTimeLength);
             }
         }
-    }, [otherGraphJSON]);
+    }, [otherGraphJSON, otherDTGraphJSON]);
 
     useEffect(() => {
         if(myGraphData){
-            setGraphData(myGraphData);
-            if(otherGraphData){
-                const newGraph = myGraphData.concat(otherGraphData);
-                setGraphData(newGraph);
+            const newGraphData = JSON.parse(JSON.stringify(myGraphData));
+            console.log(newGraphData);
+            if (otherGraphData){
+                newGraphData.push(...otherGraphData);
+                console.log('pushed');
             }
+            setGraphData(newGraphData);
         }
     }, [myGraphData, otherGraphData]);
 
@@ -107,12 +124,13 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
     });
 
     useEffect(() => {
+        console.log(graphData);
         if (graphData && dataType && timeLength) {
             const dType = dataType === 'Healing' ? 'Hps' : 'Dps';
             const tickPositions = generateTickPositions(timeLength, 1000);
             const container = {
                 chart: {
-                    type: 'area',
+                    type: 'line',
                     reflow: false,
                     width: timeLength / 10
                 },

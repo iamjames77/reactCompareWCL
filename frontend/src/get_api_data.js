@@ -40,6 +40,7 @@ export function get_player_data(reportID, fight) {
     })
       .then(response => response.json())
       .then(data => {
+        console.log(data);
         return data;
       }
       )
@@ -123,4 +124,20 @@ export function getKeyOptions(data, key){
     }
   });
   return keyOptions;
+}
+
+export function get_enemy_data(reportID, fight, startTime, endTime) {
+  return fetch('/get_enemy_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reportID, fight, startTime, endTime }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
 }

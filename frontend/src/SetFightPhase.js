@@ -47,7 +47,7 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
             SetError('No fight data');
             return;
         }
-        setInitialFightID(flatfightIDOption[0].text);
+        setInitialFightID('KILL');
         SetError('');
     }
     

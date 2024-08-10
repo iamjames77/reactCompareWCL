@@ -17,9 +17,18 @@ function SetSource({ReportID, fightID, SetError, SetSourceID, SetSourceName}) {
                 SetError(data.errors[0].message);
                 return;
             }
-            const tankList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.tanks, 'name');
-            const healerList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.healers, 'name');
-            const dpsList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.dps, 'name');
+            const tankList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.tanks, 'name').map(item => ({
+                ...item,
+                roles: 'tank'
+                }));
+            const healerList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.healers, 'name').map(item => ({
+                ...item,
+                roles: 'healer'
+                }));
+            const dpsList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.dps, 'name').map(item => ({
+                ...item,
+                roles: 'dps'
+                }));
             const sourceList = tankList.concat(healerList).concat(dpsList);
             const sourceOptionList = sourceList.map(item => {
                 const JSONValue = JSON.parse(item.value)[0];
@@ -33,7 +42,7 @@ function SetSource({ReportID, fightID, SetError, SetSourceID, SetSourceName}) {
             const AllOption = {
                 value: 'ALL',
                 text: 'ALL',
-                imageURL: null
+                imageURL: 'https://wow.zamimg.com/images/wow/icons/large/ui_greenflag.jpg'
             }
             setSourceIDOptions([AllOption, ...sourceOptionList]);
             SetError('');
