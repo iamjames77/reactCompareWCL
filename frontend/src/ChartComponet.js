@@ -53,12 +53,11 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
                 })   
             }).filter(result => result !== undefined);
             if (type === 'Healing' && myDTGraphJSON){
-                console.log('DTGraph');
                 const myDTGraph = myDTGraphJSON.graph;
                 const myDTGraphData = {
                     name: `Damage Taken`,
                     data: myDTGraph.data.map((value, index) => [index * myDTGraph.pointInterval, value]),
-                    visible: true
+                    visible: false
                 }
                 mySeries.push(myDTGraphData);
             }
@@ -87,7 +86,7 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
                 const otherDTGraphData = {
                     name: `'Damage Taken`,
                     data: otherDTGraph.data.map((value, index) => [index * otherDTGraph.pointInterval, value]),
-                    visible: true
+                    visible: false
                 }
                 otherSeries.push(otherDTGraphData);
             }
@@ -103,10 +102,8 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
     useEffect(() => {
         if(myGraphData){
             const newGraphData = JSON.parse(JSON.stringify(myGraphData));
-            console.log(newGraphData);
             if (otherGraphData){
                 newGraphData.push(...otherGraphData);
-                console.log('pushed');
             }
             setGraphData(newGraphData);
         }
@@ -124,7 +121,6 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
     });
 
     useEffect(() => {
-        console.log(graphData);
         if (graphData && dataType && timeLength) {
             const dType = dataType === 'Healing' ? 'Hps' : 'Dps';
             const tickPositions = generateTickPositions(timeLength, 1000);
@@ -184,6 +180,11 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
         }
     }, [timeLength]);
 
+    useEffect(() => {
+        console.log('chart change')
+        console.log(chart);
+    }, [chart]);
+    
     return (
         <div style={graphStyle}>
              <HighchartsReact containerProps={{ style: {width:'100%' } }} highcharts={Highcharts} options={chart} ref={chartRef}/>

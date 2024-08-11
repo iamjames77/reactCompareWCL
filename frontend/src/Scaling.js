@@ -13,7 +13,7 @@ function Scaling({timeLength, chartInterval, chartLeft}) {
     for (let i =0; i<totalSeconds; i++){
         component.push(
         <div>
-            <div style={{left: i * chartInterval + chartLeft - 15, position: 'absolute', color:'white'}}>
+            <div style={{left: i * chartInterval + chartLeft - 15, position: 'absolute', color:'white', fontSize: 19}}>
             {secondsToMinutesAndSeconds(i)}
             </div>
             <br/>
@@ -23,11 +23,11 @@ function Scaling({timeLength, chartInterval, chartLeft}) {
     }
     
     return (
-        <div>
-            <div style={{position: 'relative', display:'flex', width: '100%', height: '30px'}} className='scaling'>
+        <div style = {{marginTop:4, marginBottom:2}}>
+            <div style={{position: 'relative', display:'flex', width: '100%', height: '34px'}} className='scaling'>
                 {component}
             </div>
-            <hr style={{marginLeft: chartLeft,backgroundColr:'white', height:'1px', width: chartInterval * timeLength / 1000}}/>
+            <hr style={{margin: 0, border:0, marginLeft: chartLeft, backgroundColor:'white', height:'1px', width: chartInterval * timeLength / 1000}}/>
         </div>
     );
 }

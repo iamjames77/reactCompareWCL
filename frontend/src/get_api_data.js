@@ -1,10 +1,10 @@
-export function get_data(reportID, fight, source) {
+export function get_data(reportID, fight, source, startTime, endTime) {
     return fetch('/get_data', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ reportID, fight, source }),
+      body: JSON.stringify({ reportID, fight, source, startTime, endTime }),
     })
       .then(response => response.json())
       .then(data => {
@@ -40,20 +40,19 @@ export function get_player_data(reportID, fight) {
     })
       .then(response => response.json())
       .then(data => {
-        console.log(data);
         return data;
       }
       )
       .catch(err => console.error('Error fetching data'));
 }
 
-export function get_graph_data(reportID, fight, source, type, startTime, endTime) {
+export function get_graph_data(reportID, fight, source, target, type, startTime, endTime) {
     return fetch('/get_graph_data', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ reportID, fight, source, type, startTime, endTime }),
+      body: JSON.stringify({ reportID, fight, source, target, type, startTime, endTime }),
     })
       .then(response => response.json())
       .then(data => {
@@ -126,13 +125,61 @@ export function getKeyOptions(data, key){
   return keyOptions;
 }
 
-export function get_enemy_data(reportID, fight, startTime, endTime) {
+export function get_friendly_data(reportID, fight) {
+  return fetch('/get_friendly_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reportID, fight }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
+}
+
+export function get_enemy_data(reportID, fight) {
   return fetch('/get_enemy_data', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ reportID, fight, startTime, endTime }),
+    body: JSON.stringify({ reportID, fight }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
+}
+
+export function get_master_data(reportID){
+  return fetch('/get_master_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reportID }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
+}
+
+export function get_buff_data(reportID, fight, source, target, startTime, endTime){
+  return fetch('/get_buff_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reportID, fight, source, target, startTime, endTime }),
   })
     .then(response => response.json())
     .then(data => {

@@ -12,17 +12,20 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
 
     useEffect(() => {
         if(reportID === null){
+            console.log('reportID is null');
             SetError('input a report id');
             return;
         }
         SetError('');
-       getNameOptions(reportID);
-       setDTypeOption();
-    }, [reportID]);
+        console.log('check');
+        getNameOptions(reportID);
+        setDTypeOption();
+    },  [reportID]);
 
     const getNameOptions = (reportID) => {
         get_fight_options(reportID).then(data => {
           if (data.errors) {
+            console.log('28')
             SetError(data.errors[0].message);
             return;
           }

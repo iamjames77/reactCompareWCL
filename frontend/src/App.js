@@ -1,14 +1,17 @@
 import './App.css';
 import Dropdown from './dropdown';
 import React, { useState, useEffect } from 'react';
-import {get_data, get_player_data, get_graph_data, get_fight_data_with_encounterID, get_enemy_data} from './get_api_data';
+import * as API from './get_api_data';
+// import {get_data, get_graph_data, get_fight_data_with_encounterID, get_enemy_data, get_master_data} from './get_api_data';
 import ChartComponent from './ChartComponet';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import SetBossType from './SetBossType';
 import SetFightPhase from './SetFightPhase';
-import SetSource from './SetSource';
+import SetSourceTarget from './SetSourceTarget';
 import Scaling from './Scaling';
+import Checkboxdown from './Checkboxdown';
+import BossCast from './BossCast';
 
 function App() {
   const [inputMyValue, setInputMyValue] = useState('');
@@ -26,6 +29,8 @@ function App() {
   const [type, setType] = useState(null);
   const [sourceID, setSourceID] = useState(null);
   const [sourceName, setSourceName] = useState(null);
+  const [targetID, setTargetID] = useState(null);
+  const [otherTargetID, setOtherTargetID] = useState(null);
   const [otherSourceID, setOtherSourceID] = useState(null);
   const [otherSourceName, setOtherSourceName] = useState(null);
   const [graphData, setGraphData] = useState(null);
@@ -49,6 +54,17 @@ function App() {
   const [chartInterval, setChartInterval] = useState(null);
   const [chartLeft, setChartLeft] = useState(null);
 
+  const [masterAbilities, setMasterAbilities] = useState(null);
+  const [masterNPCs, setMasterNPCs] = useState(null);
+  const [friendlyNPCs, setFriendlyNPCs] = useState(null);
+  const [enemyNPCs, setEnemyNPCs] = useState(null);
+  const [otherFriendlyNPCs, setOtherFriendlyNPCs] = useState(null);
+  const [otherEnemyNPCs, setOtherEnemyNPCs] = useState(null);
+  const [buffTable, setBuffTable] = useState(null);
+  const [globalBuffTable, setGlobalBuffTable] = useState(null);
+  const [selfBuffEvent, setSelfBuffEvent] = useState(null);
+  const [otherSelfBuff, setOtherSelfBuff] = useState(null);
+
   // 입력 변경 시
   const myInputChange = (event) => {
     setInputMyValue(event.target.value);
@@ -70,8 +86,9 @@ function App() {
 
   useEffect(() => {
     if (name && otherReportID) {
-      get_fight_data_with_encounterID(otherReportID, name).then(data => {
+      API.get_fight_data_with_encounterID(otherReportID, name).then(data => {
         if (data.errors) {
+          console.log('90');
           setError(data.errors[0].message);
           return;
         }
@@ -80,20 +97,21 @@ function App() {
   }
   }, [name, otherReportID]);
 
-  const getData = (r, f, s, rD) => {
-    get_data(r,f,s).then(data => {
+  const getData = (r, f, s, sT, eT, rD) => {
+    API.get_data(r,f,s, sT, eT).then(data => {
       if (data.errors) {
+        console.log('101');
         setError(data.errors[0].message);
         return;
       }
-      console.log(data);
-      rD(data);
+      rD(data.data.reportData.report);
     });
   }
 
-  const getGraphData = (r,f,s,t,sT,eT, gD) => {
-    get_graph_data(r, f, s, t, sT, eT).then(data => {
+  const getGraphData = (r, f, s, t, ty, sT, eT, gD) => {
+    API.get_graph_data(r, f, s, t, ty, sT, eT).then(data => {
       if (data.errors) {
+        console.log('112');
         setError(data.errors[0].message);
         return;
       }
@@ -101,42 +119,93 @@ function App() {
     });
   }
 
-  useEffect(() => {
-    if (reportID && fight && sourceID) {
-      getData(reportID, fight, sourceID, setResponseData);
+  const getBuffData = async (r, f, s, t, sT, eT, stB, sgB, eB) => {
+    try {
+      if(s === 'ALL'){
+        return;
+      }
+      let data = await API.get_buff_data(r, f, s, t, sT, eT);
+      if (data.errors) {
+        console.log('125');
+        setError(data.errors[0].message);
+        return;
+      }
+      stB(data.data.reportData.report.self.data.auras);
+      sgB(data.data.reportData.report.global.data.auras);
+      let eBData = data.data.reportData.report.events.data;
+      let nextPageTimestamp = data.data.reportData.report.events.nextPageTimestamp;
+      while (nextPageTimestamp) {
+        data = await API.get_buff_data(r, f, s, t, nextPageTimestamp, eT);
+        if (data.errors) {
+          console.log('132');
+          setError(data.errors[0].message);
+          return;
+        }
+        eBData.push(...data.data.reportData.report.events.data);
+        nextPageTimestamp = data.data.reportData.report.events.nextPageTimestamp;
+      }
+      eB(eBData);  // 최종 데이터 처리
+    } catch (error) {
+      console.error('An error occurred:', error);
     }
-  }, [reportID, fight, sourceID]);
+  };
+  
+  // Master Data
+  useEffect(() => {
+    if(reportID){
+      API.get_master_data(reportID).then(data => {
+        if (data.errors) {
+          console.log(data.errors[0].message);
+          setReportID(null);
+          return;
+        }
+        setMasterAbilities(data.data.reportData.report.masterData.abilities)
+        setMasterNPCs(data.data.reportData.report.masterData.npc);
+      });
+    }
+  }, [reportID]);
+    
 
   useEffect(() => {
-    if (otherReportID && otherFight && otherSourceID) {
-      getData(otherReportID, otherFight, otherSourceID, setOtherResponseData);
+    if (reportID && fight && sourceID && startTime && endTime) {
+      getData(reportID, fight, sourceID, startTime, endTime, setResponseData);
     }
-  }, [otherReportID, otherFight, otherSourceID]);
+  }, [reportID, fight, sourceID, startTime, endTime]);
 
+  // 
+  useEffect(() => {
+    if (otherReportID && otherFight && otherSourceID && otherStartTime && otherEndTime) {
+      getData(otherReportID, otherFight, otherSourceID, otherStartTime, otherEndTime, setOtherResponseData);
+    }
+  }, [otherReportID, otherFight, otherSourceID, otherStartTime, otherEndTime]);
+
+  // Graph Data
   useEffect(() => {
     if (reportID && fight && sourceID && type && startTime && endTime && !notRenderGraph) {
-      getGraphData(reportID, fight, sourceID, type, startTime, endTime, setGraphData);
+      getGraphData(reportID, fight, sourceID, targetID, type, startTime, endTime, setGraphData);
       if (type === 'Healing'){
-        getGraphData(reportID, fight, 'ALL', 'DamageTaken', startTime, endTime, setDTData);
+        getGraphData(reportID, fight, 'ALL', 'ALL', 'DamageTaken', startTime, endTime, setDTData);
       }
     }
     else{
       setGraphData(null);
     }
-  }, [reportID, fight, sourceID, type, startTime, endTime, notRenderGraph]);
+  }, [reportID, fight, sourceID, targetID, type, startTime, endTime, notRenderGraph]);
 
+  // Other Graph Data
   useEffect(() => {
-    if (otherReportID && otherFight && otherSourceID && type && otherStartTime && otherEndTime && !notRenderGraph) {
-      getGraphData(otherReportID, otherFight, otherSourceID, type, otherStartTime, otherEndTime, setOtherGraphData);
+    if (otherReportID && otherFight && otherSourceID && otherTargetID && type && otherStartTime && otherEndTime && !notRenderGraph) {
+      getGraphData(otherReportID, otherFight, otherSourceID, otherTargetID, type, otherStartTime, otherEndTime, setOtherGraphData);
       if(type === 'Healing'){
-        getGraphData(otherReportID, otherFight, 'ALL', 'DamageTaken', otherStartTime, otherEndTime, setOtherDTData);
+        getGraphData(otherReportID, otherFight, 'ALL', 'ALL', 'DamageTaken', otherStartTime, otherEndTime, setOtherDTData);
       }
     }
     else{
       setOtherGraphData(null);
     }
-  }, [otherReportID, otherFight, otherSourceID, type, otherStartTime, otherEndTime, notRenderGraph]);
+  }, [otherReportID, otherFight, otherSourceID, otherTargetID, type, otherStartTime, otherEndTime, notRenderGraph]);
 
+  // Set Graph Data
   useEffect(() => {
     if (graphData) {
       setMyGraphJSON({
@@ -147,6 +216,7 @@ function App() {
     }
   }, [graphData]);
 
+  // Set Damage Taken Data
   useEffect(() => {
     if (DTData) {
       setDTGraphJSON({
@@ -157,19 +227,7 @@ function App() {
     }
   },[DTData]);
 
-  useEffect(() => {
-    if (fight && startTime && endTime) {
-      get_enemy_data(reportID, fight, startTime, endTime).then(data => {
-        if (data.errors) {
-          setError(data.errors[0].message);
-          return;
-        }
-        console.log(data);
-      }
-    )}
-  }, [fight, startTime, endTime]);
-
-
+  // Set Other Graph Data
   useEffect(() => {
     if (otherGraphData) {
       setOtherGraphJSON({
@@ -180,6 +238,7 @@ function App() {
     }
   }, [otherGraphData])
 
+  // Set Other Damage Taken Data
   useEffect(() => {
     if (otherDTData) {
       setOtherDTGraphJSON({
@@ -190,6 +249,7 @@ function App() {
     }
   },[otherDTData]);
 
+  // Graph Render 안 하는 경우 시간 길이, 간격, 왼쪽 여백 설정
   useEffect(() => {
     if(notRenderGraph && startTime && endTime){
       setTimeLength(endTime - startTime);
@@ -203,9 +263,77 @@ function App() {
     }
   }, [notRenderGraph, startTime, endTime, otherStartTime, otherEndTime, timeLength, chartInterval, chartLeft]);
 
+  // Get NPC data
   useEffect(() => {
-    console.log(DTGraphJSON);
-  }, [DTGraphJSON]);
+    if (fight && startTime && endTime) {
+      API.get_enemy_data(reportID, fight).then(data => {
+        if (data.errors) {
+          console.log('263');
+          setError(data.errors[0].message);
+          return;
+        }
+        setEnemyNPCs(data.data.reportData.report.fights[0].enemyNPCs);
+      })
+      API.get_friendly_data(reportID, fight).then(data => {
+        if (data.errors) {
+          console.log('271');
+          setError(data.errors[0].message);
+          return;
+        }
+        setFriendlyNPCs(data.data.reportData.report.fights[0].friendlyNPCs);
+      })
+    }
+  }, [fight, startTime, endTime]);
+
+  // Get Other NPC data
+  useEffect(() => {
+    if (otherFight && otherStartTime && otherEndTime) {
+      API.get_enemy_data(otherReportID, otherFight).then(data => {
+        if (data.errors) {
+          console.log('285');
+          setError(data.errors[0].message);
+          return;
+        }
+        setOtherEnemyNPCs(data.data.reportData.report.fights[0].enemyNPCs);
+      })
+      API.get_friendly_data(otherReportID, otherFight).then(data => {
+        if (data.errors) {
+          console.log('293');
+          setError(data.errors[0].message);
+          return;
+        }
+        setOtherFriendlyNPCs(data.data.reportData.report.fights[0].friendlyNPCs);
+      })
+    }
+  }, [otherFight, otherStartTime, otherEndTime]);
+
+  // Get Buff Data
+  useEffect(() => {
+    if (fight && startTime && endTime && sourceID) {
+      getBuffData(reportID, fight, sourceID, sourceID, startTime, endTime, setBuffTable, setGlobalBuffTable, setSelfBuffEvent);
+    }
+  }, [fight, startTime, endTime, sourceID]);
+
+  useEffect( () => {
+    if(selfBuffEvent){
+      const selfBuffINFO = selfBuffEvent.map(item => {
+        const buffINFO = masterAbilities.find(abiltiy => abiltiy.gameID === item.abilityGameID);
+        if (buffINFO){
+          return {
+            'abilityName': buffINFO.name,
+            'abilityID': item.abilityGameID,
+            'abilityIcon': buffINFO.icon,
+            'timeStamp': item.timestamp,
+            'source': item.sourceID,
+            'target': item.targetID,
+            'stack': item.stack ? item.stack : 1,
+            'bufftype': item.type,
+            'type': buffINFO.type
+          };
+        }
+      })
+    }
+  }, [masterAbilities, selfBuffEvent]);
 
   return (
     <div className="App">
@@ -221,29 +349,31 @@ function App() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <div>
         {reportID && (
-          <SetBossType ReportID={reportID} SetError={setError} SetName={setName} SetType={setType} SetFightIDOptions={setFightIDoptions}/>
+          <SetBossType ReportID={reportID} SetError={setError} SetName={setName} SetType={setType} SetFightIDOptions={setFightIDoptions} />
         )}
         <div style={{display:'flex'}}>
           <div style={{width: otherFightIDoptions ? '50%' : '100%'}}>
             {fightIDoptions && (
-              <SetFightPhase ReportID={reportID} SetError={setError} FightIDOptions={fightIDoptions} SetFightID={setFight} SetStartTime={setStartTime} SetEndTime={setEndTime} existOnly={!otherFightIDoptions}/>
+              <SetFightPhase ReportID={reportID} SetError={setError} FightIDOptions={fightIDoptions} SetFightID={setFight} SetStartTime={setStartTime} SetEndTime={setEndTime} existOnly={!otherFightIDoptions} />
             )}
           </div>
           <div style={{width: otherFightIDoptions ? '50%' : '0%'}}>
             {otherFightIDoptions && (
-              <SetFightPhase ReportID={otherReportID} SetError={setError} FightIDOptions={otherFightIDoptions} SetFightID={setOtherFight} SetStartTime={setOtherStartTime} SetEndTime={setOtherEndTime}/>
+              <SetFightPhase ReportID={otherReportID} SetError={setError} FightIDOptions={otherFightIDoptions} SetFightID={setOtherFight} SetStartTime={setOtherStartTime} SetEndTime={setOtherEndTime} />
             )}
           </div>
         </div>
         <div style={{display:'flex'}}>
           <div style={{width: otherFightIDoptions ? '50%' : '100%'}}>
             {startTime && endTime && (
-              <SetSource ReportID={reportID} fightID={fight} SetError={setError} SetSourceID={setSourceID} SetSourceName={setSourceName}/>
+              <SetSourceTarget ReportID={reportID} fightID={fight} SetError={setError} SetSourceID={setSourceID} SetSourceName={setSourceName} type={type} 
+              npc={(type === 'Healing') ? friendlyNPCs : enemyNPCs} masterNPCs={masterNPCs} SetTargetID={setTargetID} existOnly={!otherFightIDoptions}/>
             )}
           </div>
           <div style={{width: otherFightIDoptions ? '50%' : '0%'}}>
             {otherStartTime && otherEndTime && (
-              <SetSource ReportID={otherReportID} fightID={otherFight} SetError={setError} SetSourceID={setOtherSourceID} SetSourceName={setOtherSourceName}/>
+              <SetSourceTarget ReportID={otherReportID} fightID={otherFight} SetError={setError} SetSourceID={setOtherSourceID} SetSourceName={setOtherSourceName} type ={type}
+              npc={(type === 'Healing') ? otherFriendlyNPCs : otherEnemyNPCs} masterNPCs={masterNPCs} SetTargetID = {setOtherTargetID}/>
             )}
           </div>
         </div>
@@ -252,8 +382,15 @@ function App() {
         {myGraphJSON && (
           <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} myDTGraphJSON={DTGraphJSON} otherDTGraphJSON={otherDTGraphJSON} type={type} SetTimeLength= {setTimeLength} SetChartInterval={setChartInterval} SetChartLeft={setChartLeft}/>
         )}
-        {timeLength && chartInterval && chartLeft && sourceID &&(
+        {sourceID && enemyNPCs && (
+          <Checkboxdown sourceID={sourceID} enemyNPCs ={enemyNPCs} buff={buffTable} globalBuff = {globalBuffTable}masterAbilities={masterAbilities} masterNPCs={masterNPCs}
+          startTime={startTime} endTime={endTime}/>
+        )}
+        {timeLength && chartInterval && chartLeft && sourceID && (
           <Scaling timeLength={timeLength} chartInterval={chartInterval} chartLeft={chartLeft}/>
+        )}
+        {false && chartLeft && enemyNPCs && sourceID && (
+          <BossCast fight = {fight} startTime = {startTime} endTime = {endTime} BossData = {enemyNPCs} chartLeft = {chartLeft} chartInterval={chartInterval}/>
         )}
       </div>
     </div>

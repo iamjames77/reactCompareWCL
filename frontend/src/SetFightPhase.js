@@ -16,8 +16,6 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
     const [phaseIDOptions, setPhaseIDOptions] = useState(null);
     const [initialPhaseID, setInitialPhaseID] = useState(null);
 
-    const [exist, setExist] = useState(existOnly);
-
     useEffect(() => {
         preprocessingFightOption(FightIDOptions);
     }, [FightIDOptions]);
@@ -43,7 +41,10 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
         });
         const flatfightIDOption = fightIDOption.flat().reverse();
         setFightIDOptions(flatfightIDOption);
+        setFightID(null);
+        SetFightID(null);
         if(!flatfightIDOption){
+            console.log('No fight data');
             SetError('No fight data');
             return;
         }
@@ -72,38 +73,42 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
     const setPhaseOptions= () => {
         get_phase_info(ReportID).then(data => {
             if (data.errors) {
+                console.log('setPhaseOptions');
                 SetError(data.errors[0].message);
                 return;
             }
-            const phaseInfo = phaseList.map(item1 =>{
+            const result = [];
+            result.push({
+                value: JSON.stringify({startTime: fightstartTime, endTIme:fightendTime}),
+                text: 'All Phases',
+            })
+            if(phaseList){
+                const phaseInfo = phaseList.map(item1 =>{
                 const phaseData = data.data.reportData.report.phases.find(item2 => 
                     item2.encounterID === encounterID).phases.find(item3 => item3.id === item1.id);
                 if (phaseData){
                     return {...item1, ...phaseData};
                 }
                 return item1;
-            }).filter(item => item !== undefined);
+                }).filter(item => item !== undefined);
+                const ObjectPhaseInfo = Object.values(phaseInfo);
             
-            const ObjectPhaseInfo = Object.values(phaseInfo);
-            const result = [];
-            result.push({
-                value: JSON.stringify({startTime: fightstartTime, endTIme:fightendTime}),
-                text: 'All Phases',
-            })
-            for (let i= 0; i< ObjectPhaseInfo.length; i++){
-                if (i === ObjectPhaseInfo.length -1) {
-                    result.push({
-                        value: JSON.stringify({startTime: ObjectPhaseInfo[i].startTime, endTIme:fightendTime}),
-                        text: ObjectPhaseInfo[i].name,
-                    });
-                }
-                else{
-                    result.push({
-                        value: JSON.stringify({startTime: ObjectPhaseInfo[i].startTime, endTIme:ObjectPhaseInfo[i+1].startTime}),
-                        text: ObjectPhaseInfo[i].name,
-                    });
-                }
+                for (let i= 0; i< ObjectPhaseInfo.length; i++){
+                    if (i === ObjectPhaseInfo.length -1) {
+                        result.push({
+                            value: JSON.stringify({startTime: ObjectPhaseInfo[i].startTime, endTIme:fightendTime}),
+                            text: ObjectPhaseInfo[i].name,
+                        });
+                    }
+                    else{
+                        result.push({
+                            value: JSON.stringify({startTime: ObjectPhaseInfo[i].startTime, endTIme:ObjectPhaseInfo[i+1].startTime}),
+                            text: ObjectPhaseInfo[i].name,
+                        });
+                    }
+                }            
             }
+
             setPhaseIDOptions(result);
             setInitialPhaseID(result[0].text);
             SetError('');
@@ -125,19 +130,19 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
     }
 
     const dropdownStyle = {
-        width: exist ? 'calc(50% - 12px)' : 'calc(50% - 9px)', /* 전체 너비 */
+        width: existOnly ? 'calc(50% - 12px)' : 'calc(50% - 9px)', /* 전체 너비 */
         margin: '6px',
     }
 
     return (
         <div style={selectStyle}>
             {fightIDOptions && (
-                <div style={{...dropdownStyle, marginRight: exist? '6px' : '3px'}}>
+                <div style={{...dropdownStyle, marginRight: existOnly? '6px' : '3px'}}>
                     <Dropdown name="Fight" options={fightIDOptions} onSelectValue={setFightHandler} getIcon={false} initialOption={InitialFightID}/>
                 </div>
             )}
             {phaseIDOptions && (
-                <div style={{...dropdownStyle, marginLeft: exist?'6px': '3px'}}>
+                <div style={{...dropdownStyle, marginLeft: existOnly?'6px': '3px'}}>
                     <Dropdown name="Phase" options={phaseIDOptions} onSelectValue={setPhaseHandler} getIcon={false} initialOption={initialPhaseID}/>
                 </div>
             )}

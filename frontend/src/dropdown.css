@@ -7,11 +7,22 @@
 
 .dropdown-header {
     padding: 10px;
+    height: 23px;
     border: 1px solid #ccc;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
+}
+
+.dropdown-header.open {
+    border-bottom: 2px solid white;
+}
+
+.dropdown-header.disabled {
+    cursor: not-allowed;
+    opacity: 0.5; /* 비활성화 시 시각적으로 흐리게 표시 */
+    pointer-events: none; /* 클릭 이벤트 무효화 */
 }
 
 .dropdown-list {
@@ -47,4 +58,38 @@
 
 .dropdown-arrow.open {
     transform: rotate(180deg);
+}
+
+.checkbox {
+    width: calc(25% - 9px);
+    margin: 6px;
+    margin-bottom: 0;
+    height: 45px;
+}
+
+.checkbox.left {
+    margin-left: 0;
+}
+
+.checkbox.right {
+    margin-right: 0;
+}
+
+.checkbox-grid {
+    display: flex;
+    border: 1px solid #ccc;
+    flex-wrap: wrap;
+    gap: 12px;
+    background-color: white;
+    margin-bottom: 6px;
+}
+
+.checkbox-item {
+    white-space: nowrap;
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    width: calc(25% - 9px); /* 4개씩 한 줄에 배치하기 위해 각 항목의 너비를 25%로 설정 */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
 }

@@ -33,29 +33,43 @@ def read_token():
 def retrieve_headers() -> dict:
     return {"Authorization": f"Bearer {read_token()}"}
 
-query = """query($code: String, $sourceID: Int, $fight: Int){
+query = """query($code: String, $sourceID: Int, $fight: Int, $startTime: Float, $endTime: Float){
             reportData{
                 report(code: $code){
                     casts: events(fightIDs: [$fight], dataType: Casts, sourceID: $sourceID){
-                        data
+                        data,
+                        nextPageTimestamp
                     }
                     buffs: events(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID){
-                        data
+                        data,
+                        nextPageTimestamp
                     }
                     fights(fightIDs: [$fight]){
-                        enemyNPCs{gameID, id}
+                        enemyNPCs{gameID, id, instanceCount}
                     }
                     cast_table: table(fightIDs: [$fight], dataType: Casts, sourceID: $sourceID)
                     buff_table: table(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID)
+                    bosscasts: events(fightIDs: [$fight], hostilityType: Enemies, dataType: Casts, startTime: $startTime, endTime: $endTime){
+                        data,
+                        nextPageTimestamp
+                    }
                 }
             }
             }"""
 
-ALL_query = """query($code: String, $fight: Int){
+ALL_query = """query($code: String, $fight: Int, $startTime: Float, $endTime: Float){
             reportData{
                 report(code: $code){
                     fights(fightIDs: [$fight]){
-                        enemyNPCs{gameID, id}
+                        enemyNPCs{gameID, id, instanceCount}
+                    }
+                    bosscasts: events(fightIDs: [$fight], hostilityType: Enemies, dataType: Casts, startTime: $startTime, endTime: $endTime){
+                        data,
+                        nextPageTimestamp
+                    }
+                    buffs: events(fightIDs: [$fight], dataType: Buffs){
+                        data,
+                        nextPageTimestamp
                     }
                 }
             }
@@ -64,7 +78,15 @@ ALL_query = """query($code: String, $fight: Int){
 graph_query = """query($code: String, $sourceID: Int, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
                 reportData{
                     report(code: $code){
-                        graph(sourceID: $sourceID, dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime)
+                        graph(sourceID: $sourceID, dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime, translate:false)
+                }
+            }
+            }"""
+
+graph_target_query = """query($code: String, $sourceID: Int, $targetID: Int, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        graph(sourceID: $sourceID, targetID: $targetID, dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime, translate: false)
                 }
             }
             }"""
@@ -73,7 +95,14 @@ graph_query = """query($code: String, $sourceID: Int, $dtype: GraphDataType, $fi
 ALL_graph_query = """query($code: String, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
                 reportData{
                     report(code: $code){
-                        graph(dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime)
+                        graph(dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime, translate: false)
+                }
+            }
+            }"""
+ALL_graph_target_query = """query($code: String, $targetID: Int, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        graph(targetID: $targetID, dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime, tranlate:false) 
                 }
             }
             }"""
@@ -141,12 +170,57 @@ phase_query = """query($code: String){
             }
             }"""
 
-enemy_query = """query($code: String, $fight: Int, $startTime: Float, $endTime: Float){
+friendly_query = """query($code: String, $fight: Int){
                 reportData{
                     report(code: $code){
-                        events(fightIDs: [$fight], hostilityType: Enemies, dataType: Casts, startTime: $startTime, endTime: $endTime){
-                            data
+                        fights(fightIDs: [$fight]){
+                            friendlyNPCs{gameID, id}
                         }
+                    }
                 }
-            }
+            }"""
+
+enemy_query = """query($code: String, $fight: Int){
+                reportData{
+                    report(code: $code){
+                        fights(fightIDs: [$fight]){
+                            enemyNPCs{gameID, id}
+                        }
+                    }
+                }
+            }"""
+
+master_query = """query($code: String){
+                reportData{
+                    report(code: $code){
+                        masterData(translate: false){
+                            abilities{
+                                gameID
+                                icon
+                                name
+                                type
+                            }
+                            npc : actors(type: "NPC"){
+                                gameID
+                                icon
+                                id
+                                name
+                                subType
+                            }
+                        }
+                    }
+                }
+            }"""
+
+get_buff_query = """query($code: String, $fight: Int, $sourceID: Int, $targetID: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        self: table(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID, targetID: $targetID,startTime: $startTime, endTime: $endTime, translate: false)
+                        global: table(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false)
+                        events(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID, targetID: $targetID, startTime: $startTime, endTime: $endTime){
+                            data,
+                            nextPageTimestamp
+                        }
+                    }
+                }
             }"""

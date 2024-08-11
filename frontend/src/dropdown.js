@@ -1,7 +1,7 @@
 import React, { useState, useEffect} from 'react';
 import './dropdown.css';
 
-function Dropdown({name, options, onSelectValue, getIcon, initialOption}) {
+function Dropdown({name, options, onSelectValue, getIcon, initialOption, setOtherOpen}) {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState(null);
 
