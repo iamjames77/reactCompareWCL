@@ -102,7 +102,7 @@ ALL_graph_query = """query($code: String, $dtype: GraphDataType, $fight: Int, $s
 ALL_graph_target_query = """query($code: String, $targetID: Int, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
                 reportData{
                     report(code: $code){
-                        graph(targetID: $targetID, dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime, tranlate:false) 
+                        graph(targetID: $targetID, dataType: $dtype, fightIDs: [$fight], startTime: $startTime, endTime:$endTime, translate:false) 
                 }
             }
             }"""

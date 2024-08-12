@@ -60,8 +60,11 @@ function App() {
   const [otherFriendlyNPCs, setOtherFriendlyNPCs] = useState(null);
   const [otherEnemyNPCs, setOtherEnemyNPCs] = useState(null);
   const [buffTable, setBuffTable] = useState(null);
+  const [otherBuffTable, setOtherBuffTable] = useState(null);
   const [globalBuffTable, setGlobalBuffTable] = useState(null);
+  const [otherGlobalBuffTable, setOtherGlobalBuffTable] = useState(null);
   const [castTable, setCastTable] = useState(null);
+  const [otherCastTable, setOtherCastTable] = useState(null);
 
   const [selectedEnemy, setSelectedEnemy] = useState(null);
   const [selectedBuff, setSelectedBuff] = useState(null);
@@ -291,7 +294,7 @@ function App() {
     }
   }, [otherFight, otherStartTime, otherEndTime]);
 
-  // Get Buff Data
+  // Get Table Data
   useEffect(() => {
     if (fight && startTime && endTime && sourceID && (sourceID !== 'ALL')) {
       getTableData(reportID, fight, sourceID, sourceID, startTime, endTime, setBuffTable, setGlobalBuffTable, setCastTable);
@@ -302,6 +305,18 @@ function App() {
       setCastTable(null);
     }
   }, [fight, startTime, endTime, sourceID]);
+
+  // Get Other Buff Data
+  useEffect(() => {
+    if (otherFight && otherStartTime && otherEndTime && otherSourceID && (otherSourceID !== 'ALL')) {
+      getTableData(otherReportID, otherFight, otherSourceID, otherSourceID, otherStartTime, otherEndTime, setOtherBuffTable, setOtherGlobalBuffTable, setOtherCastTable);
+    }
+    else if ((otherSourceID === 'ALL')){
+      setOtherBuffTable(null);
+      setOtherGlobalBuffTable(null);
+      setOtherCastTable(null);
+    }
+  }, [otherFight, otherStartTime, otherEndTime, otherSourceID]);
 
   return (
     <div className="App">
@@ -351,8 +366,10 @@ function App() {
           <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} myDTGraphJSON={DTGraphJSON} otherDTGraphJSON={otherDTGraphJSON} type={type} SetTimeLength= {setTimeLength} SetChartInterval={setChartInterval} SetChartLeft={setChartLeft}/>
         )}
         {sourceID && enemyNPCs && (
-          <Checkboxdown reportID = {reportID} fight={fight} sourceID={sourceID} enemyNPCs ={enemyNPCs} buff={buffTable} 
-          globalBuff = {globalBuffTable} masterNPCs={masterNPCs} cast ={castTable} 
+          <Checkboxdown reportID = {reportID} fight={fight} sourceID={sourceID} sourceName={sourceName} enemyNPCs ={enemyNPCs} buff={buffTable} 
+          globalBuff = {globalBuffTable} masterNPCs={masterNPCs} cast ={castTable}
+          otherReportID = {otherReportID} otherFight = {otherFight} otherSourceID = {otherSourceID} otherSourceName = {otherSourceName}
+          otherBuff = {otherBuffTable} otherGlobalBuff = {otherGlobalBuffTable} otherCast = {otherCastTable} 
           setSelectedEnemy={setSelectedEnemy} setSelectedBuff={setSelectedBuff} setSelectedCast={setSelectedCast}
           startTime={startTime} endTime={endTime}/>
         )}

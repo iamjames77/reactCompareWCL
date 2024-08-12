@@ -2,15 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { get_hostility_table_data } from './get_api_data';
 import './dropdown.css';
 
-function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyNPCs, buff, globalBuff, cast, setSelectedEnemy, setSelectedBuff, setSelectedCast, 
-    startTime,endTime
+function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, otherSourceID, sourceName, otherSourceName, masterNPCs, enemyNPCs, 
+    buff, globalBuff, cast, otherBuff, otherGlobalBuff, otherCast,
+    setSelectedEnemy, setSelectedBuff, setSelectedCast, startTime,endTime
 }) {
     const [openDropdown, setOpenDropdown] = useState(null);
     const [enemyNPCsInfo, setEnemyNPCsInfo] = useState([]);
     const [globalbuff, setGlobalbuff] = useState({});
+    const [otherGlobalbuff, setOtherGlobalbuff] = useState({});
     const [enemyFilter, setEnemyFilter] = useState({});
     const [buffFilter, setBuffFilter] = useState({});
     const [playerCastFilter, setPlayerCastFilter] = useState({});
+    const [otherPlayerCastFilter, setOtherPlayerCastFilter] = useState({});
     const [enemyCastFilter, setEnemyCastFilter] = useState({});
     const [castFilter, setCastFilter] = useState({});
 
@@ -71,7 +74,7 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyN
                 <div key={index} className="checkbox-item">
                     <input type="checkbox" id={item.guid} name={item.name}
                     checked = {castFilter[item.guid] || false}
-                    onChange={(e)=> handleCheckboxChange(e, setBuffFilter)}/>
+                    onChange={(e)=> handleCheckboxChange(e, setCastFilter)}/>
                     <a href ={'https://www.wowhead.com/spell=' + item.guid} target="_blank" rel="noreferrer">
                         <img src={`https://wow.zamimg.com/images/wow/icons/large/${item.abilityIcon}`} alt="" className="dropdown-icon"/>
                     </a>
@@ -122,7 +125,21 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyN
             }).filter((aura) => aura !== undefined);
             setGlobalbuff(result);
         }
-    }, [buff, globalBuff])
+    }, [buff, globalBuff]) 
+
+    //otherGlobalBuff 정보를 가져옴
+    useEffect( () => {
+        if(otherBuff && otherGlobalBuff) {
+            const result = otherGlobalBuff.map((aura) => {
+                const findBuff = otherBuff.find((buff) => buff.guid === aura.guid);
+                if (!findBuff) {
+                    return aura;
+                }
+            }).filter((aura) => aura !== undefined);
+            setOtherGlobalbuff(result);
+        }
+    }, [otherBuff, otherGlobalBuff])
+
 
     //선택된 적들의 캐스트 정보를 가져옴
     useEffect(() => {
@@ -149,6 +166,7 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyN
     
     //cast checkbox 초기화
     useEffect(() => {
+        console.log('castChange')
         if(cast) {
             const initialCast = {};
             cast.forEach((ability) => {
@@ -158,8 +176,21 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyN
         }
     },[cast]);
 
+    //otherCast checkbox 초기화
+    useEffect(() => {
+        console.log('otherCastChange')
+        if(otherCast) {
+            const initialCast = {};
+            otherCast.forEach((ability) => {
+                initialCast[ability.guid] = true;
+            });
+            setOtherPlayerCastFilter(initialCast);
+        }
+    },[otherCast]);
+
     //enemyCast checkbox 초기화
     useEffect(() => {
+        console.log('enemyCastChange')
         if(enemyCast){            
             const initialCast = {};
             enemyCast.forEach((enemy) => {
@@ -169,12 +200,13 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyN
             });
             setEnemyCastFilter(initialCast);
         }
-    })
+    }, [enemyCast]);
 
     //castFilter 업데이트
     useEffect(() => {
-        setCastFilter({...playerCastFilter, ...enemyCastFilter});
-    }, [playerCastFilter, enemyCastFilter]);
+        console.log('castFilterChange')
+        setCastFilter({...playerCastFilter, ...otherPlayerCastFilter ,...enemyCastFilter});
+    }, [playerCastFilter, otherPlayerCastFilter,enemyCastFilter]);
 
     return (
         <div style={{position:'sticky', left:0}}>
@@ -190,7 +222,7 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyN
                 <div className="checkbox">
                     <div className="dropdown">
                         <div className= {`dropdown-header ${openDropdown === 'buff' ? 'open' : ''} ${sourceID === 'ALL' ? 'disabled' : ''}`} onClick={() => handleToggle('buff')}>
-                            Self-Buff Filter
+                            Buff Filter
                             <span className={`dropdown-arrow ${openDropdown === 'buff' ? 'open' : ''}`}>▼</span>
                         </div>
                     </div>
@@ -198,7 +230,7 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyN
                 <div className="checkbox">
                     <div className="dropdown">
                         <div className={`dropdown-header ${openDropdown === 'globalBuff' ? 'open' : ''}  ${sourceID === 'ALL' ? 'disabled' : ''}`} onClick={() => handleToggle('globalBuff')}>
-                            Global Buff Filter
+                            External Buff Filter
                             <span className={`dropdown-arrow ${openDropdown === 'globalBuff' ? 'open' : ''}`}>▼</span>
                         </div>
                     </div>
@@ -218,18 +250,47 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyN
                 </div>
             )}
             {openDropdown === 'buff' &&  buff && (
-                <div className="checkbox-grid" style = {{height: Math.ceil(buff.length / 4) * 45}}>
+                <div className="checkbox-grid" style = {{height: (Math.ceil(buff.length / 4) + 1)* 45 + 
+                (otherBuff ? ((Math.ceil(otherBuff.length / 4) + 1)* 45): 0)}}>
+                    <>
+                    <div className="checkbox-text">
+                        {sourceName} Buff
+                    </div>
                     {buffRenderCheckboxItems(buff)}
+                    </>
+                    {otherBuff && (
+                        <>
+                        <div className="checkbox-text">
+                            {otherSourceName} Buff
+                        </div>
+                        {buffRenderCheckboxItems(otherBuff)}
+                        </>
+                    )}
                 </div>
             )}
             {openDropdown === 'globalBuff' &&  globalbuff && (
-                <div className="checkbox-grid" style = {{height: Math.ceil(globalbuff.length / 4) * 45}}>
+                <div className="checkbox-grid" style = {{height: (Math.ceil(globalbuff.length / 4) + 1)* 45 +
+                (otherGlobalBuff ? ((Math.ceil(otherGlobalbuff.length / 4) + 1)* 45): 0)}}>
+                    <>
+                    <div className="checkbox-text">
+                        {sourceName} External Buff
+                    </div>
                     {buffRenderCheckboxItems(globalbuff)}
+                    </>
+                    {otherGlobalBuff && (
+                        <>
+                        <div className="checkbox-text">
+                            {otherSourceName} External Buff
+                        </div>
+                        {buffRenderCheckboxItems(otherGlobalbuff)}
+                        </>
+                    )}
                 </div>
             )}
             {openDropdown === 'cast' && (cast || enemyCast) && (
                 <div className="checkbox-grid" style = {{height: 0 
-                + (cast ?(Math.ceil(cast.length / 4) + 1) * 45 : 0) 
+                + (cast ?(Math.ceil(cast.length / 4) + 1) * 45 : 0)
+                + (otherCast ?(Math.ceil(otherCast.length/4) + 1) * 45 : 0)
                 + (enemyCast ?(Math.ceil(enemyCastLength/4) + 1) * 45 : 0)}}>
                     {enemyCast && (
                     <>
@@ -246,10 +307,18 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, masterNPCs, enemyN
                     {cast && (
                     <>
                        <div className="checkbox-text">
-                            Player Cast
+                            {sourceName} Cast
                         </div>
                         {castRenderCheckboxItems(cast)}
                     </> 
+                    )}
+                    {otherCast && (
+                    <>
+                        <div className="checkbox-text">
+                            {otherSourceName} Cast
+                        </div>
+                        {castRenderCheckboxItems(otherCast)}
+                    </>
                     )}
                 </div>
             )}
