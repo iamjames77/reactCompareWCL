@@ -1,5 +1,4 @@
 import './App.css';
-import Dropdown from './dropdown';
 import React, { useState, useEffect } from 'react';
 import * as API from './get_api_data';
 // import {get_data, get_graph_data, get_fight_data_with_encounterID, get_enemy_data, get_master_data} from './get_api_data';
@@ -62,8 +61,11 @@ function App() {
   const [otherEnemyNPCs, setOtherEnemyNPCs] = useState(null);
   const [buffTable, setBuffTable] = useState(null);
   const [globalBuffTable, setGlobalBuffTable] = useState(null);
-  const [selfBuffEvent, setSelfBuffEvent] = useState(null);
-  const [otherSelfBuff, setOtherSelfBuff] = useState(null);
+  const [castTable, setCastTable] = useState(null);
+
+  const [selectedEnemy, setSelectedEnemy] = useState(null);
+  const [selectedBuff, setSelectedBuff] = useState(null);
+  const [selectedCast, setSelectedCast] = useState(null);
 
   // 입력 변경 시
   const myInputChange = (event) => {
@@ -119,35 +121,17 @@ function App() {
     });
   }
 
-  const getBuffData = async (r, f, s, t, sT, eT, stB, sgB, eB) => {
-    try {
-      if(s === 'ALL'){
-        return;
-      }
-      let data = await API.get_buff_data(r, f, s, t, sT, eT);
+  const getTableData = (r, f, s, t, sT, eT, sB, sgB, sC) => {
+    API.get_table_data(r, f, s, t, sT, eT).then(data => {
       if (data.errors) {
-        console.log('125');
+        console.log('123');
         setError(data.errors[0].message);
         return;
       }
-      stB(data.data.reportData.report.self.data.auras);
+      sB(data.data.reportData.report.self.data.auras);
       sgB(data.data.reportData.report.global.data.auras);
-      let eBData = data.data.reportData.report.events.data;
-      let nextPageTimestamp = data.data.reportData.report.events.nextPageTimestamp;
-      while (nextPageTimestamp) {
-        data = await API.get_buff_data(r, f, s, t, nextPageTimestamp, eT);
-        if (data.errors) {
-          console.log('132');
-          setError(data.errors[0].message);
-          return;
-        }
-        eBData.push(...data.data.reportData.report.events.data);
-        nextPageTimestamp = data.data.reportData.report.events.nextPageTimestamp;
-      }
-      eB(eBData);  // 최종 데이터 처리
-    } catch (error) {
-      console.error('An error occurred:', error);
-    }
+      sC(data.data.reportData.report.cast.data.entries);
+    })
   };
   
   // Master Data
@@ -309,31 +293,15 @@ function App() {
 
   // Get Buff Data
   useEffect(() => {
-    if (fight && startTime && endTime && sourceID) {
-      getBuffData(reportID, fight, sourceID, sourceID, startTime, endTime, setBuffTable, setGlobalBuffTable, setSelfBuffEvent);
+    if (fight && startTime && endTime && sourceID && (sourceID !== 'ALL')) {
+      getTableData(reportID, fight, sourceID, sourceID, startTime, endTime, setBuffTable, setGlobalBuffTable, setCastTable);
+    }
+    else if ((sourceID === 'ALL')){
+      setBuffTable(null);
+      setGlobalBuffTable(null);
+      setCastTable(null);
     }
   }, [fight, startTime, endTime, sourceID]);
-
-  useEffect( () => {
-    if(selfBuffEvent){
-      const selfBuffINFO = selfBuffEvent.map(item => {
-        const buffINFO = masterAbilities.find(abiltiy => abiltiy.gameID === item.abilityGameID);
-        if (buffINFO){
-          return {
-            'abilityName': buffINFO.name,
-            'abilityID': item.abilityGameID,
-            'abilityIcon': buffINFO.icon,
-            'timeStamp': item.timestamp,
-            'source': item.sourceID,
-            'target': item.targetID,
-            'stack': item.stack ? item.stack : 1,
-            'bufftype': item.type,
-            'type': buffINFO.type
-          };
-        }
-      })
-    }
-  }, [masterAbilities, selfBuffEvent]);
 
   return (
     <div className="App">
@@ -378,12 +346,14 @@ function App() {
           </div>
         </div>
       </div>
-      <div style= {{overflowX: 'auto', marginLeft:'6px', marginRight:'6px'}}>
+      <div style= {{overflowX: 'auto'}}>
         {myGraphJSON && (
           <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} myDTGraphJSON={DTGraphJSON} otherDTGraphJSON={otherDTGraphJSON} type={type} SetTimeLength= {setTimeLength} SetChartInterval={setChartInterval} SetChartLeft={setChartLeft}/>
         )}
         {sourceID && enemyNPCs && (
-          <Checkboxdown sourceID={sourceID} enemyNPCs ={enemyNPCs} buff={buffTable} globalBuff = {globalBuffTable}masterAbilities={masterAbilities} masterNPCs={masterNPCs}
+          <Checkboxdown reportID = {reportID} fight={fight} sourceID={sourceID} enemyNPCs ={enemyNPCs} buff={buffTable} 
+          globalBuff = {globalBuffTable} masterNPCs={masterNPCs} cast ={castTable} 
+          setSelectedEnemy={setSelectedEnemy} setSelectedBuff={setSelectedBuff} setSelectedCast={setSelectedCast}
           startTime={startTime} endTime={endTime}/>
         )}
         {timeLength && chartInterval && chartLeft && sourceID && (

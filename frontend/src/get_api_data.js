@@ -173,13 +173,29 @@ export function get_master_data(reportID){
     .catch(err => console.error('Error fetching data'));
 }
 
-export function get_buff_data(reportID, fight, source, target, startTime, endTime){
-  return fetch('/get_buff_data', {
+export function get_table_data(reportID, fight, source, target, startTime, endTime){
+  return fetch('/get_table_data', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ reportID, fight, source, target, startTime, endTime }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
+}
+
+export function get_hostility_table_data(reportID, fight, source, startTime, endTime){
+  return fetch('/get_hostility_table_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reportID, fight, source, startTime, endTime }),
   })
     .then(response => response.json())
     .then(data => {

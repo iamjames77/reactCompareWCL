@@ -105,12 +105,18 @@ def get_master_data():
     response = get_api_data(master_query, code=report)
     return jsonify(response)
 
-@app.route('/get_buff_data', methods=['POST'])
+@app.route('/get_table_data', methods=['POST'])
 def get_buff_data():
     data = request.get_json()
     report, fight, source, target, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), data.get('target'), float(data.get('startTime')), float(data.get('endTime'))
-    response = get_api_data(get_buff_query, code=report, fight= fight, sourceID=source, targetID=target, startTime= startTime, endTime = endTime)
-    print(startTime, endTime)
+    response = get_api_data(get_table_query, code=report, fight= fight, sourceID=source, targetID=target, startTime= startTime, endTime = endTime)
+    return jsonify(response)
+
+@app.route('/get_hostility_table_data', methods=['POST'])
+def get_hostility_table_data():
+    data = request.get_json()
+    report, fight, source, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), float(data.get('startTime')), float(data.get('endTime'))
+    response = get_api_data(get_hostility_table_query, code=report, fight= fight, sourceID=source, startTime= startTime, endTime = endTime)
     return jsonify(response)
 
 @app.route('/', defaults={'path': ''})

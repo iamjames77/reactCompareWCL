@@ -67,29 +67,45 @@
     height: 45px;
 }
 
-.checkbox.left {
-    margin-left: 0;
-}
-
-.checkbox.right {
-    margin-right: 0;
-}
-
 .checkbox-grid {
     display: flex;
     border: 1px solid #ccc;
     flex-wrap: wrap;
-    gap: 12px;
     background-color: white;
-    margin-bottom: 6px;
+    margin: 6px;
+    column-gap: 11px;
+    margin-top: 0;
 }
 
 .checkbox-item {
     white-space: nowrap;
     overflow: hidden; 
     text-overflow: ellipsis;
-    width: calc(25% - 9px); /* 4개씩 한 줄에 배치하기 위해 각 항목의 너비를 25%로 설정 */
+    width: calc(25% - 8.5px);
     box-sizing: border-box;
     display: flex;
     align-items: center;
+    height: 45px;
+}
+
+.checkbox-text {
+    display: inline-flex;
+    align-items: center; /* 세로 가운데 정렬 */
+    height: 33px;
+    font-size: 20px;
+    width: 100%;
+    text-align: left;
+    line-height: 1;
+    padding: 5px;
+    position: relative;
+}
+
+.checkbox-text::after {
+    content: "";
+    position: absolute;
+    left: 5px; /* 왼쪽 여백 */
+    right: 5px; /* 오른쪽 여백 */
+    bottom: 0;
+    height: 2px; /* 밑줄의 두께 */
+    background-color: black; /* 밑줄 색상 */
 }

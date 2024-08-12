@@ -212,15 +212,20 @@ master_query = """query($code: String){
                 }
             }"""
 
-get_buff_query = """query($code: String, $fight: Int, $sourceID: Int, $targetID: Int, $startTime: Float, $endTime: Float){
+get_table_query = """query($code: String, $fight: Int, $sourceID: Int, $targetID: Int, $startTime: Float, $endTime: Float){
                 reportData{
                     report(code: $code){
                         self: table(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID, targetID: $targetID,startTime: $startTime, endTime: $endTime, translate: false)
                         global: table(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false)
-                        events(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID, targetID: $targetID, startTime: $startTime, endTime: $endTime){
-                            data,
-                            nextPageTimestamp
-                        }
+                        cast : table(fightIDs: [$fight], dataType: Casts, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false)
+                    }
+                }
+            }"""
+
+get_hostility_table_query = """query($code: String, $fight: Int, $sourceID: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        table(fightIDs: [$fight], dataType: Casts, hostilityType: Enemies, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false)
                     }
                 }
             }"""

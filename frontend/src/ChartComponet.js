@@ -175,14 +175,14 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, SetCh
         if(timeLength>0){
             setGraphStyle({
                 width: `${(timeLength/10)}px`,
-                overflowX: 'auto'
+                overflowX: 'auto',
+                margin: 6,
             })
         }
     }, [timeLength]);
 
     useEffect(() => {
         console.log('chart change')
-        console.log(chart);
     }, [chart]);
     
     return (

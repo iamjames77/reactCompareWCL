@@ -23,7 +23,7 @@ function Scaling({timeLength, chartInterval, chartLeft}) {
     }
     
     return (
-        <div style = {{marginTop:4, marginBottom:2}}>
+        <div style = {{margin:6, marginTop:4, marginBottom:2}}>
             <div style={{position: 'relative', display:'flex', width: '100%', height: '34px'}} className='scaling'>
                 {component}
             </div>
