@@ -9,17 +9,6 @@ app = Flask(__name__, static_folder='../frontend/build')
 
 publicURL = "https://www.warcraftlogs.com/api/v2/client"
 
-def make_icon_spell_dict(table, spellDict, tableType):
-    if tableType == "cast":
-        key = 'entries'
-    else:
-        key = 'auras'
-    for entry in table[key]:
-        if entry["guid"] not in spellDict:
-            spellDict[entry["guid"]] = {'name': entry["name"], 'icon': entry["abilityIcon"]}
-    return spellDict
-
-
 def get_api_data(query: str, **kwargs):
     """Fetch data from the Warcraft Logs API. Please provide a query and the parameters"""
     data = {"query": query, "variables": kwargs}
@@ -27,16 +16,6 @@ def get_api_data(query: str, **kwargs):
         session.headers = retrieve_headers()
         response = session.post(publicURL, json=data)
     return response.json()
-
-@app.route('/get_data', methods=['POST'])
-def get_data():
-    data = request.get_json()
-    reportId, fight, source, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), float(data.get('startTime')), float(data.get('endTime'))
-    if(source != 'ALL'):
-        response = get_api_data(query, code=reportId, sourceID=int(source), fight=fight, startTime=startTime, endTime=endTime)
-    else:
-        response = get_api_data(ALL_query, code=reportId, fight=fight, startTime=startTime, endTime=endTime)
-    return jsonify(response)
 
 @app.route('/get_graph_data', methods=['POST'])
 def get_graph_data():
@@ -108,8 +87,8 @@ def get_master_data():
 @app.route('/get_table_data', methods=['POST'])
 def get_buff_data():
     data = request.get_json()
-    report, fight, source, target, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), data.get('target'), float(data.get('startTime')), float(data.get('endTime'))
-    response = get_api_data(get_table_query, code=report, fight= fight, sourceID=source, targetID=target, startTime= startTime, endTime = endTime)
+    report, fight, source, target, startTime, endTime, type = data.get('reportID'), int(data.get('fight')), data.get('source'), data.get('target'), float(data.get('startTime')), float(data.get('endTime')), data.get('type')
+    response = get_api_data(get_table_query, code=report, fight= fight, type=type, sourceID=source, targetID=target, startTime= startTime, endTime = endTime)
     return jsonify(response)
 
 @app.route('/get_hostility_table_data', methods=['POST'])
@@ -117,6 +96,13 @@ def get_hostility_table_data():
     data = request.get_json()
     report, fight, source, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), float(data.get('startTime')), float(data.get('endTime'))
     response = get_api_data(get_hostility_table_query, code=report, fight= fight, sourceID=source, startTime= startTime, endTime = endTime)
+    return jsonify(response)
+
+@app.route('/get_hostility_event_data', methods=['POST'])
+def get_hostility_event_data():
+    data = request.get_json()
+    report, fight, source, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), float(data.get('startTime')), float(data.get('endTime'))
+    response = get_api_data(get_hostility_event_query, code=report, fight= fight, sourceID=source, startTime= startTime, endTime = endTime)
     return jsonify(response)
 
 @app.route('/', defaults={'path': ''})

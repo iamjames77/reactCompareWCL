@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { get_hostility_table_data } from './get_api_data';
 import './dropdown.css';
 
-function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, otherSourceID, sourceName, otherSourceName, masterNPCs, enemyNPCs, 
+function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, masterNPCs, enemyNPCs, 
     buff, globalBuff, cast, otherBuff, otherGlobalBuff, otherCast,
-    setSelectedEnemy, setSelectedBuff, setSelectedCast, startTime,endTime
+    setSelectedEnemy, setSelectedBuff, setSelectedOtherBuff,setSelectedCast, setSelectedOtherCast, setSelectedEnemyCast,
+    startTime,endTime
 }) {
     const [openDropdown, setOpenDropdown] = useState(null);
     const [enemyNPCsInfo, setEnemyNPCsInfo] = useState([]);
-    const [globalbuff, setGlobalbuff] = useState({});
-    const [otherGlobalbuff, setOtherGlobalbuff] = useState({});
+    const [externalBuff, setExternalBuff] = useState({});
+    const [otherExternalBuff, setOtherExternalBuff] = useState({});
     const [enemyFilter, setEnemyFilter] = useState({});
     const [buffFilter, setBuffFilter] = useState({});
     const [playerCastFilter, setPlayerCastFilter] = useState({});
@@ -85,7 +86,7 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
         return result
     };
 
-    //적 NPC 정보를 가져옴
+    //선택된 적 NPC 정보를 가져옴
     useEffect(() => {
         if(enemyFilter && enemyNPCsInfo) {
             const selected = Object.keys(enemyFilter).filter((key) => enemyFilter[key]);
@@ -96,6 +97,60 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
             setSelectedEnemy(result);
         }
     }, [enemyFilter, enemyNPCsInfo]);
+
+    //선택된 Buff 정보를 가져옴
+    useEffect(() => {
+        if(buffFilter && globalBuff) {
+            const result = {};
+            globalBuff.forEach((aura) => {
+                if(buffFilter[aura.guid]) {
+                    result[aura.guid] = {'name': aura.name, 'abilityIcon': aura.abilityIcon};
+                }
+            })
+            setSelectedBuff(result);
+        }
+        if(buffFilter && otherGlobalBuff) {
+            const result = {};
+            otherGlobalBuff.forEach((aura) => {
+                if(buffFilter[aura.guid]) {
+                    result[aura.guid] = {'name': aura.name, 'abilityIcon': aura.abilityIcon};
+                }
+            })
+            setSelectedOtherBuff(result);
+        }
+    }, [buffFilter]);
+
+    //선택된 Cast 정보를 가져옴
+    useEffect(() => {
+        if(castFilter && cast) {
+            const result = {};
+            cast.forEach((ability) => {
+                if(castFilter[ability.guid]) {
+                    result[ability.guid] = {'name': ability.name, 'abilityIcon': ability.abilityIcon};
+                }
+            })
+            setSelectedCast(result);
+        }
+        if(castFilter && otherCast) {
+            const result = {};
+            otherCast.forEach((ability) => {
+                if(castFilter[ability.guid]) {
+                    result[ability.guid] = {'name': ability.name, 'abilityIcon': ability.abilityIcon};
+                }
+            })
+            setSelectedOtherCast(result);
+        }
+        if (castFilter && enemyCast) {
+            const result = {};
+            enemyCast.forEach((enemy) => {
+                const cast = enemy.cast.filter((ability) => castFilter[ability.guid]);
+                if(cast.length > 0) {
+                    result[enemy.name] = cast;
+                }
+            });
+            setSelectedEnemyCast(result);
+        }
+    }, [castFilter]);
 
    //BOSS 타입인 경우 Check
     useEffect(() => {
@@ -123,7 +178,7 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
                     return aura;
                 }
             }).filter((aura) => aura !== undefined);
-            setGlobalbuff(result);
+            setExternalBuff(result);
         }
     }, [buff, globalBuff]) 
 
@@ -136,7 +191,7 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
                     return aura;
                 }
             }).filter((aura) => aura !== undefined);
-            setOtherGlobalbuff(result);
+            setOtherExternalBuff(result);
         }
     }, [otherBuff, otherGlobalBuff])
 
@@ -166,7 +221,6 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
     
     //cast checkbox 초기화
     useEffect(() => {
-        console.log('castChange')
         if(cast) {
             const initialCast = {};
             cast.forEach((ability) => {
@@ -178,7 +232,6 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
 
     //otherCast checkbox 초기화
     useEffect(() => {
-        console.log('otherCastChange')
         if(otherCast) {
             const initialCast = {};
             otherCast.forEach((ability) => {
@@ -190,7 +243,6 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
 
     //enemyCast checkbox 초기화
     useEffect(() => {
-        console.log('enemyCastChange')
         if(enemyCast){            
             const initialCast = {};
             enemyCast.forEach((enemy) => {
@@ -204,14 +256,13 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
 
     //castFilter 업데이트
     useEffect(() => {
-        console.log('castFilterChange')
         setCastFilter({...playerCastFilter, ...otherPlayerCastFilter ,...enemyCastFilter});
     }, [playerCastFilter, otherPlayerCastFilter,enemyCastFilter]);
 
     return (
         <div style={{position:'sticky', left:0}}>
             <div style={{display:'flex'}}>
-                <div className="checkbox">
+                <div className="checkbox left">
                     <div className= "dropdown">
                         <div className= {`dropdown-header ${openDropdown === 'enemyNPCs' ? 'open' : ''}`} onClick={() => handleToggle('enemyNPCs')}>
                             Enemy Filter
@@ -235,7 +286,7 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
                         </div>
                     </div>
                 </div>
-                <div className="checkbox">
+                <div className="checkbox right">
                     <div className="dropdown">
                         <div className={`dropdown-header ${openDropdown === 'cast' ? 'open' : ''}`} onClick={() => handleToggle('cast')}>
                             Cast Filter
@@ -268,21 +319,21 @@ function CheckBoxdown({reportID, otherReportID, fight, otherFight, sourceID, oth
                     )}
                 </div>
             )}
-            {openDropdown === 'globalBuff' &&  globalbuff && (
-                <div className="checkbox-grid" style = {{height: (Math.ceil(globalbuff.length / 4) + 1)* 45 +
-                (otherGlobalBuff ? ((Math.ceil(otherGlobalbuff.length / 4) + 1)* 45): 0)}}>
+            {openDropdown === 'globalBuff' &&  externalBuff && (
+                <div className="checkbox-grid" style = {{height: (Math.ceil(externalBuff.length / 4) + 1)* 45 +
+                (otherGlobalBuff ? ((Math.ceil(otherExternalBuff.length / 4) + 1)* 45): 0)}}>
                     <>
                     <div className="checkbox-text">
                         {sourceName} External Buff
                     </div>
-                    {buffRenderCheckboxItems(globalbuff)}
+                    {buffRenderCheckboxItems(externalBuff)}
                     </>
                     {otherGlobalBuff && (
                         <>
                         <div className="checkbox-text">
                             {otherSourceName} External Buff
                         </div>
-                        {buffRenderCheckboxItems(otherGlobalbuff)}
+                        {buffRenderCheckboxItems(otherExternalBuff)}
                         </>
                     )}
                 </div>

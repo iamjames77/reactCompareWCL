@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Scaling({timeLength, chartInterval, chartLeft}) {
+function Scaling({timeLength, chartInterval, chartLeft, chartWidth}) {
     const totalSeconds = (timeLength / 1000);
     const component = [];
 
@@ -23,11 +23,11 @@ function Scaling({timeLength, chartInterval, chartLeft}) {
     }
     
     return (
-        <div style = {{margin:6, marginTop:4, marginBottom:2}}>
+        <div style = {{marginTop:4, marginBottom:2}}>
             <div style={{position: 'relative', display:'flex', width: '100%', height: '34px'}} className='scaling'>
                 {component}
             </div>
-            <hr style={{margin: 0, border:0, marginLeft: chartLeft, backgroundColor:'white', height:'1px', width: chartInterval * timeLength / 1000}}/>
+            <hr style={{margin: 0, border:0, marginLeft: chartLeft, backgroundColor:'white', height:'1px', width: chartWidth}}/>
         </div>
     );
 }

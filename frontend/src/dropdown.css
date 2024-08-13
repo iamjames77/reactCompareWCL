@@ -66,13 +66,18 @@
     margin-bottom: 0;
     height: 45px;
 }
+.checkbox.left{
+    margin-left: 0;
+}
 
+.checkbox.right {
+    margin-right: 0;
+}
 .checkbox-grid {
     display: flex;
     border: 1px solid #ccc;
     flex-wrap: wrap;
     background-color: white;
-    margin: 6px;
     column-gap: 11px;
     margin-top: 0;
 }

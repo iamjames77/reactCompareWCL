@@ -1,21 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import BossName from './BossName';
+import { get_hostility_event_data } from './get_api_data';
+import './castBar.css';
 
-function BossCast({fight, startTime, endTime, BossData, BossCast, chartLeft, chartInterval}) {
-    const [BossID, setBossID] = useState(BossData[0].id);
+function BossCast({reportID, fight, startTime, endTime, enemyTable, enemyCastTable, chartLeft, chartInterval, chartWidth}) {
 
+    const renderEnemy = (enemy) => {
+        return (
+            <div className='bar' style={{width:chartWidth + chartLeft}}>
+                <div style = {{width: chartLeft, height:'100%'}}>
+                    <div className='bar-text'>
+                        {enemy.name}
+                    </div>
+                </div>
+            </div>
+        );
+    }
     useEffect(() => {
-        console.log(BossData);
-        console.log(BossCast);
-    }, [BossData, BossCast, chartLeft, chartInterval]);
+        if(enemyTable){
+            enemyTable.forEach((enemy) => {
+                console.log(enemy);
+            });
+        }
+    },[enemyTable]);
 
     return (
         <div>
-            <div style={{position: 'relative', display:'flex', width: '100%', height: '40px', marginTop:2, marginBottom:2}} className='scaling'>
-                <div style = {{positiion : 'absolute', width: chartLeft, height:'100%', backgroundColor:'white'}}>
-                    {BossName[BossData[0].gameID]}
-                </div>
-            </div>
+            {enemyTable.map((enemy) => (
+                renderEnemy(enemy))
+            )}
         </div>
     );
 }

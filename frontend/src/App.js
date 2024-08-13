@@ -1,7 +1,6 @@
 import './App.css';
 import React, { useState, useEffect } from 'react';
 import * as API from './get_api_data';
-// import {get_data, get_graph_data, get_fight_data_with_encounterID, get_enemy_data, get_master_data} from './get_api_data';
 import ChartComponent from './ChartComponet';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
@@ -42,8 +41,6 @@ function App() {
   const [otherStartTime, setOtherStartTime] = useState(null);
   const [otherEndTime, setOtherEndTime] = useState(null);
 
-  const [responseData, setResponseData] = useState(null);
-  const [otherResponseData, setOtherResponseData] = useState(null);
   const [myGraphJSON, setMyGraphJSON] = useState(null);
   const [otherGraphJSON, setOtherGraphJSON] = useState(null);
   const [DTGraphJSON, setDTGraphJSON] = useState(null);
@@ -52,6 +49,7 @@ function App() {
   const [timeLength, setTimeLength] = useState(null);
   const [chartInterval, setChartInterval] = useState(null);
   const [chartLeft, setChartLeft] = useState(null);
+  const [chartWidth, setChartWidth] = useState(null);
 
   const [masterAbilities, setMasterAbilities] = useState(null);
   const [masterNPCs, setMasterNPCs] = useState(null);
@@ -65,10 +63,15 @@ function App() {
   const [otherGlobalBuffTable, setOtherGlobalBuffTable] = useState(null);
   const [castTable, setCastTable] = useState(null);
   const [otherCastTable, setOtherCastTable] = useState(null);
+  const [abilityTable, setAbilityTable] = useState(null);
+  const [otherAbilityTable, setOtherAbilityTable] = useState(null);
 
   const [selectedEnemy, setSelectedEnemy] = useState(null);
   const [selectedBuff, setSelectedBuff] = useState(null);
+  const [selectedOtherBuff, setSelectedOtherBuff] = useState(null);
   const [selectedCast, setSelectedCast] = useState(null);
+  const [selectedOtherCast, setSelectedOtherCast] = useState(null);
+  const [selectedEnemyCast, setSelectedEnemyCast] = useState(null);
 
   // 입력 변경 시
   const myInputChange = (event) => {
@@ -102,17 +105,6 @@ function App() {
   }
   }, [name, otherReportID]);
 
-  const getData = (r, f, s, sT, eT, rD) => {
-    API.get_data(r,f,s, sT, eT).then(data => {
-      if (data.errors) {
-        console.log('101');
-        setError(data.errors[0].message);
-        return;
-      }
-      rD(data.data.reportData.report);
-    });
-  }
-
   const getGraphData = (r, f, s, t, ty, sT, eT, gD) => {
     API.get_graph_data(r, f, s, t, ty, sT, eT).then(data => {
       if (data.errors) {
@@ -120,20 +112,24 @@ function App() {
         setError(data.errors[0].message);
         return;
       }
-      gD(data);
+      gD(data.data.reportData.report.graph.data.series);
     });
   }
 
-  const getTableData = (r, f, s, t, sT, eT, sB, sgB, sC) => {
-    API.get_table_data(r, f, s, t, sT, eT).then(data => {
+  const getTableData = (r, f, s, t, ty,sT, eT, sA, sB, sgB, sC) => {
+    API.get_table_data(r, f, s, t, ty,sT, eT).then(data => {
       if (data.errors) {
         console.log('123');
         setError(data.errors[0].message);
         return;
       }
-      sB(data.data.reportData.report.self.data.auras);
-      sgB(data.data.reportData.report.global.data.auras);
-      sC(data.data.reportData.report.cast.data.entries);
+      const sort_sB = data.data.reportData.report.self.data.auras.sort((a,b) => a.guid - b.guid);
+      const sort_sgB = data.data.reportData.report.global.data.auras.sort((a,b) => a.guid - b.guid);
+      const sort_sC = data.data.reportData.report.cast.data.entries.sort((a,b) => a.guid - b.guid);
+      sA(data.data.reportData.report.abilities.data.entries);
+      sB(sort_sB);
+      sgB(sort_sgB);
+      sC(sort_sC);
     })
   };
   
@@ -151,21 +147,7 @@ function App() {
       });
     }
   }, [reportID]);
-    
-
-  useEffect(() => {
-    if (reportID && fight && sourceID && startTime && endTime) {
-      getData(reportID, fight, sourceID, startTime, endTime, setResponseData);
-    }
-  }, [reportID, fight, sourceID, startTime, endTime]);
-
-  // 
-  useEffect(() => {
-    if (otherReportID && otherFight && otherSourceID && otherStartTime && otherEndTime) {
-      getData(otherReportID, otherFight, otherSourceID, otherStartTime, otherEndTime, setOtherResponseData);
-    }
-  }, [otherReportID, otherFight, otherSourceID, otherStartTime, otherEndTime]);
-
+  
   // Graph Data
   useEffect(() => {
     if (reportID && fight && sourceID && type && startTime && endTime && !notRenderGraph) {
@@ -196,8 +178,9 @@ function App() {
   useEffect(() => {
     if (graphData) {
       setMyGraphJSON({
+        id : sourceID,
         name: sourceName,
-        graph: graphData.data.reportData.report.graph.data.series,
+        graph: graphData,
         time: endTime - startTime
       });
     }
@@ -208,7 +191,7 @@ function App() {
     if (DTData) {
       setDTGraphJSON({
         name: sourceName,
-        graph: DTData.data.reportData.report.graph.data.series.find(item => item.id === 'Total'),
+        graph: DTData.find(item => item.id === 'Total'),
         time: endTime - startTime
       });
     }
@@ -219,7 +202,7 @@ function App() {
     if (otherGraphData) {
       setOtherGraphJSON({
         name: otherSourceName,
-        graph: otherGraphData.data.reportData.report.graph.data.series,
+        graph: otherGraphData,
         time: otherEndTime - otherStartTime
       });
     }
@@ -230,7 +213,7 @@ function App() {
     if (otherDTData) {
       setOtherDTGraphJSON({
         name: sourceName,
-        graph: otherDTData.data.reportData.report.graph.data.series.find(item => item.id === 'Total'),
+        graph: otherDTData.find(item => item.id === 'Total'),
         time: endTime - startTime
       });
     }
@@ -297,26 +280,26 @@ function App() {
   // Get Table Data
   useEffect(() => {
     if (fight && startTime && endTime && sourceID && (sourceID !== 'ALL')) {
-      getTableData(reportID, fight, sourceID, sourceID, startTime, endTime, setBuffTable, setGlobalBuffTable, setCastTable);
+      getTableData(reportID, fight, sourceID, sourceID, type, startTime, endTime, setAbilityTable, setBuffTable, setGlobalBuffTable, setCastTable);
     }
     else if ((sourceID === 'ALL')){
       setBuffTable(null);
       setGlobalBuffTable(null);
       setCastTable(null);
     }
-  }, [fight, startTime, endTime, sourceID]);
+  }, [reportID, fight, startTime, endTime, sourceID, type]);
 
   // Get Other Buff Data
   useEffect(() => {
     if (otherFight && otherStartTime && otherEndTime && otherSourceID && (otherSourceID !== 'ALL')) {
-      getTableData(otherReportID, otherFight, otherSourceID, otherSourceID, otherStartTime, otherEndTime, setOtherBuffTable, setOtherGlobalBuffTable, setOtherCastTable);
+      getTableData(otherReportID, otherFight, otherSourceID, otherSourceID, type,otherStartTime, otherEndTime, setOtherAbilityTable, setOtherBuffTable, setOtherGlobalBuffTable, setOtherCastTable);
     }
     else if ((otherSourceID === 'ALL')){
       setOtherBuffTable(null);
       setOtherGlobalBuffTable(null);
       setOtherCastTable(null);
     }
-  }, [otherFight, otherStartTime, otherEndTime, otherSourceID]);
+  }, [reportID, otherFight, otherStartTime, otherEndTime, otherSourceID, type]);
 
   return (
     <div className="App">
@@ -361,9 +344,11 @@ function App() {
           </div>
         </div>
       </div>
-      <div style= {{overflowX: 'auto'}}>
+      <div style= {{overflowX: 'auto', margin: 6}}>
         {myGraphJSON && (
-          <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} myDTGraphJSON={DTGraphJSON} otherDTGraphJSON={otherDTGraphJSON} type={type} SetTimeLength= {setTimeLength} SetChartInterval={setChartInterval} SetChartLeft={setChartLeft}/>
+          <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} myDTGraphJSON={DTGraphJSON} otherDTGraphJSON={otherDTGraphJSON} type={type} 
+          SetTimeLength= {setTimeLength} setChartInterval={setChartInterval} setChartLeft={setChartLeft} setChartWidth={setChartWidth}
+          abilityTable={abilityTable} otherAbilityTable={otherAbilityTable}/>
         )}
         {sourceID && enemyNPCs && (
           <Checkboxdown reportID = {reportID} fight={fight} sourceID={sourceID} sourceName={sourceName} enemyNPCs ={enemyNPCs} buff={buffTable} 
@@ -371,13 +356,15 @@ function App() {
           otherReportID = {otherReportID} otherFight = {otherFight} otherSourceID = {otherSourceID} otherSourceName = {otherSourceName}
           otherBuff = {otherBuffTable} otherGlobalBuff = {otherGlobalBuffTable} otherCast = {otherCastTable} 
           setSelectedEnemy={setSelectedEnemy} setSelectedBuff={setSelectedBuff} setSelectedCast={setSelectedCast}
+          setSelectedOtherBuff = {setSelectedOtherBuff} setSelectedOtherCast = {setSelectedOtherCast} setSelectedEnemyCast={setSelectedEnemyCast}
           startTime={startTime} endTime={endTime}/>
         )}
         {timeLength && chartInterval && chartLeft && sourceID && (
-          <Scaling timeLength={timeLength} chartInterval={chartInterval} chartLeft={chartLeft}/>
+          <Scaling timeLength={timeLength} chartInterval={chartInterval} chartLeft={chartLeft} chartWidth = {chartWidth}/>
         )}
-        {false && chartLeft && enemyNPCs && sourceID && (
-          <BossCast fight = {fight} startTime = {startTime} endTime = {endTime} BossData = {enemyNPCs} chartLeft = {chartLeft} chartInterval={chartInterval}/>
+        {chartLeft && selectedEnemy && sourceID && (
+          <BossCast startTime = {startTime} endTime = {endTime} enemyTable = {selectedEnemy} enemyCastTable ={selectedEnemyCast} 
+          chartLeft = {chartLeft} chartInterval={chartInterval} chartWidth ={chartWidth}/>
         )}
       </div>
     </div>

@@ -33,48 +33,6 @@ def read_token():
 def retrieve_headers() -> dict:
     return {"Authorization": f"Bearer {read_token()}"}
 
-query = """query($code: String, $sourceID: Int, $fight: Int, $startTime: Float, $endTime: Float){
-            reportData{
-                report(code: $code){
-                    casts: events(fightIDs: [$fight], dataType: Casts, sourceID: $sourceID){
-                        data,
-                        nextPageTimestamp
-                    }
-                    buffs: events(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID){
-                        data,
-                        nextPageTimestamp
-                    }
-                    fights(fightIDs: [$fight]){
-                        enemyNPCs{gameID, id, instanceCount}
-                    }
-                    cast_table: table(fightIDs: [$fight], dataType: Casts, sourceID: $sourceID)
-                    buff_table: table(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID)
-                    bosscasts: events(fightIDs: [$fight], hostilityType: Enemies, dataType: Casts, startTime: $startTime, endTime: $endTime){
-                        data,
-                        nextPageTimestamp
-                    }
-                }
-            }
-            }"""
-
-ALL_query = """query($code: String, $fight: Int, $startTime: Float, $endTime: Float){
-            reportData{
-                report(code: $code){
-                    fights(fightIDs: [$fight]){
-                        enemyNPCs{gameID, id, instanceCount}
-                    }
-                    bosscasts: events(fightIDs: [$fight], hostilityType: Enemies, dataType: Casts, startTime: $startTime, endTime: $endTime){
-                        data,
-                        nextPageTimestamp
-                    }
-                    buffs: events(fightIDs: [$fight], dataType: Buffs){
-                        data,
-                        nextPageTimestamp
-                    }
-                }
-            }
-            }"""
-
 graph_query = """query($code: String, $sourceID: Int, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
                 reportData{
                     report(code: $code){
@@ -212,9 +170,10 @@ master_query = """query($code: String){
                 }
             }"""
 
-get_table_query = """query($code: String, $fight: Int, $sourceID: Int, $targetID: Int, $startTime: Float, $endTime: Float){
+get_table_query = """query($code: String, $fight: Int, $sourceID: Int, $type:TableDataType ,$targetID: Int, $startTime: Float, $endTime: Float){
                 reportData{
                     report(code: $code){
+                        abilities: table(fightIDs: [$fight], dataType: $type, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false)
                         self: table(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID, targetID: $targetID,startTime: $startTime, endTime: $endTime, translate: false)
                         global: table(fightIDs: [$fight], dataType: Buffs, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false)
                         cast : table(fightIDs: [$fight], dataType: Casts, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false)
@@ -226,6 +185,14 @@ get_hostility_table_query = """query($code: String, $fight: Int, $sourceID: Int,
                 reportData{
                     report(code: $code){
                         table(fightIDs: [$fight], dataType: Casts, hostilityType: Enemies, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false)
+                    }
+                }
+            }"""
+
+get_hostility_event_query = """query($code: String, $fight: Int, $sourceID: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        events(fightIDs: [$fight], dataType: Casts, hostilityType: Enemies, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false)
                     }
                 }
             }"""

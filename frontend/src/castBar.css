@@ -1,0 +1,15 @@
+.bar {
+    position: relative; 
+    display:'flex'; 
+    height: 40px;
+    background-color: white;
+}
+
+.bar-text {
+    white-space: nowrap;
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}

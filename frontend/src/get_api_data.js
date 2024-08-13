@@ -1,19 +1,3 @@
-export function get_data(reportID, fight, source, startTime, endTime) {
-    return fetch('/get_data', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ reportID, fight, source, startTime, endTime }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        return data;
-      }
-      )
-      .catch(err => console.error('Error fetching data'));
-}
-
 export function get_fight_options(reportID) {
     return fetch('/get_fight_data', {
       method: 'POST',
@@ -173,13 +157,13 @@ export function get_master_data(reportID){
     .catch(err => console.error('Error fetching data'));
 }
 
-export function get_table_data(reportID, fight, source, target, startTime, endTime){
+export function get_table_data(reportID, fight, source, target, type, startTime, endTime){
   return fetch('/get_table_data', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ reportID, fight, source, target, startTime, endTime }),
+    body: JSON.stringify({ reportID, fight, source, target, type, startTime, endTime }),
   })
     .then(response => response.json())
     .then(data => {
@@ -191,6 +175,22 @@ export function get_table_data(reportID, fight, source, target, startTime, endTi
 
 export function get_hostility_table_data(reportID, fight, source, startTime, endTime){
   return fetch('/get_hostility_table_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reportID, fight, source, startTime, endTime }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
+}
+
+export function get_hostility_event_data(reportID, fight, source, startTime, endTime){
+  return fetch('/get_hostility_event_data', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -48,13 +48,15 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
                     return {
                         value: JSON.stringify(JSONValue),
                         text: item.text,
-                        imageURL: specIcon
+                        imageURL: specIcon,
+                        roles: item.roles
                     };
                 });
                 const AllOption = {
                     value: 'ALL',
                     text: 'ALL',
-                    imageURL: 'https://wow.zamimg.com/images/wow/icons/large/ui_greenflag.jpg'
+                    imageURL: 'https://wow.zamimg.com/images/wow/icons/large/ui_greenflag.jpg',
+                    roles: 'All'
                 }
                 setSourceIDOptions([AllOption, ...sourceOptionList]);
                 SetError('');
@@ -69,8 +71,14 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
     const setSourceHandler = (selectedSource) => {
         if(selectedSource){
             if (selectedSource === 'ALL'){
+                const specIconList = {};
+                sourceIDOptions.forEach((item)=> {
+                    if(item.text !== 'ALL'){
+                        specIconList[item.text] = item.imageURL;
+                    }
+                })
                 SetSourceID('ALL');
-                SetSourceName('ALL');
+                SetSourceName(specIconList);
                 return;
             }
             const selectedSourceJson = JSON.parse(selectedSource);
