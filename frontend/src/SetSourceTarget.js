@@ -118,6 +118,9 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
             }
             setTargetIDOptions([AllOption, ...targetList]);
         }
+        else{
+            setTargetIDOptions(null);
+        }
         setInitialTargetID('ALL');
     }, [type, npc, sourceIDOptions])
 

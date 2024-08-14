@@ -7,6 +7,8 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
     myDTGraphJSON, otherDTGraphJSON, abilityTable, otherAbilityTable}) {
     const [myGraphData, setMyGraphData] = useState(null);
     const [otherGraphData, setOtherGraphData] = useState(null);
+    const [graph, setGraph] = useState({});
+    const [otherGraph, setOtherGraph] = useState({});
     const [graphData, setGraphData] = useState(null);
     const [dataType, setDataType] = useState(null);
     const [timeLength, setTimeLength] = useState(0);
@@ -16,6 +18,8 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
     const [chartSeries, setChartSeries] = useState(null);
     const [chartFilter, setChartFilter] = useState(null);
     const [isChartReady, setIsChartReady] = useState(false);
+    const [componentSeries, setComponentSeries] = useState({});
+    const [otherComponentSeries, setOtherComponentSeries] = useState({});
     const chartRef = useRef(null);
 
     // Helper functions
@@ -47,19 +51,23 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
         setIsOpen(!isOpen);
     };
 
-    const toggleSeriesVisibility = (seriesIndex) => {
-        const ch = chartRef.current.chart;
-        const series = ch.series[seriesIndex];
-        series.setVisible(!series.visible, true);
+    const toggleSeriesVisibility = (name, scS) => {
+        scS(prev => ({
+            ...prev,
+            [name]: {
+                ...prev[name],
+                visible: !prev[name].visible
+            }
+        }));
     };
 
-    const renderTableItems = (items) => {
+    const renderTableItems = (items, cS, scS) => {
         const result = items.map((item, index) => {
             return (
                 <div key={index} className="checkbox-item">
                     <input type="checkbox" id={item.name} name={item.name}
-                    checked = {chartFilter[item.name]}
-                    onChange={(e)=> toggleSeriesVisibility(index)}/>
+                    checked = {cS[item.name].visible}
+                    onChange={()=> toggleSeriesVisibility(item.name, scS)}/>
                     <img src={item.img} alt="" className="dropdown-icon"/>
                     <label htmlFor={item}>{item.name}</label>
                 </div>
@@ -75,7 +83,14 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             const name = myGraphJSON.name;
             const graph = myGraphJSON.graph;
             const myTimeLength = myGraphJSON.time;
-            const mySeries = Object.entries(graph).map( ([key,data]) => {
+            setGraph(prev => ({
+                ...prev,
+                ['id']: id,
+                ['name']: name,
+                ['graph']: graph,
+            }));
+            const newComponentSeries = {};
+            Object.entries(graph).forEach(([key, data]) => {
                 let img;
                 if(id !== 'ALL'){
                     const find = abilityTable.find(ability => ability.name === data.name)
@@ -87,25 +102,29 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                     }
                 } else{
                     img = name[data.name];
-                }        
-                return ({
-                    name: `${data.name}`,
-                    data: data.data.map((value, index) => [index * data.pointInterval, value]),
-                    visible: (data.name === 'Total' ? true : false),
-                    img: img        
-                });   
-            }).filter(result => result !== undefined); 
-            if (type === 'Healing' && myDTGraphJSON){
-                const myDTGraph = myDTGraphJSON.graph;
-                const myDTGraphData = {
-                    name: `Damage Taken`,
-                    data: myDTGraph.data.map((value, index) => [index * myDTGraph.pointInterval, value]),
-                    visible: false,
-                    img: undefined
                 }
-                mySeries.push(myDTGraphData);
+                console.log(data.name);
+                console.log(img);
+                newComponentSeries[data.name] = {
+                    visible: data.id === 'Total' ? true : false,
+                    img: img,
+                };
+            });
+            setComponentSeries(prev => ({
+                ...prev,
+                ...newComponentSeries
+            }));
+            if (myDTGraphJSON){
+                const myDTGraph = myDTGraphJSON.graph;
+                setGraph(prev => ({
+                    ...prev,
+                    ['DTGraph']: myDTGraph
+                }));
+                setComponentSeries(prev => ({
+                    ...prev,
+                    ['Damage Taken']: {'visible': false, 'img': undefined}
+                }));
             }
-            setMyGraphData(mySeries);
             setDataType(type);
             const newTimeLength = Math.ceil(myTimeLength/1000) * 1000;
             setTimeLength(newTimeLength);
@@ -115,12 +134,53 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
     }, [myGraphJSON, abilityTable, myDTGraphJSON ,type]);
 
     useEffect(() => {
+        console.log(componentSeries);
+    }, [componentSeries]);
+
+    useEffect(() => {
+        let isEmpty = true;
+        for (let key in graph) {
+            if (graph.hasOwnProperty(key)) {
+                isEmpty = false;
+                break; // 첫 번째 키를 찾은 즉시 루프를 종료
+            }
+        }
+        if(!isEmpty && componentSeries && type){
+            const mySeries = Object.entries(graph.graph).map( ([key,data]) => {
+                return ({
+                    name: `${data.name}`,
+                    data: data.data.map((value, index) => [index * data.pointInterval, value]),
+                    visible: componentSeries[data.name].visible,
+                    img: componentSeries[data.name].img
+                })
+            }).filter(result => result !== undefined);
+            if(graph.DTGraph && (type === 'Healing')){
+                const myDTGraph = graph.DTGraph;
+                const myDTGraphData = {
+                    name: `Damage Taken`,
+                    data: myDTGraph.data.map((value, index) => [index * myDTGraph.pointInterval, value]),
+                    visible: componentSeries['Damage Taken'].visible,
+                    img: componentSeries['Damage Taken'].img
+                }
+                mySeries.push(myDTGraphData);
+            }
+            setMyGraphData(mySeries);
+        }
+    }, [graph, componentSeries]);
+
+    useEffect(() => {
         if (otherGraphJSON && (otherGraphJSON.id === 'ALL' || otherAbilityTable)){
             const id = otherGraphJSON.id;
             const name = otherGraphJSON.name;
             const graph = otherGraphJSON.graph;
             const otherTimeLength = otherGraphJSON.time;
-            const otherSeries = Object.entries(graph).map( ([key,data]) => {
+            setOtherGraph(prev => ({
+                ...prev,
+                ['id']: id,
+                ['name']: name,
+                ['graph']: graph,
+            }));
+            Object.entries(graph).forEach(([key, data]) => {
                 let img;
                 if(id !== 'ALL'){
                     const find = otherAbilityTable.find(ability => ability.name === data.name)
@@ -132,25 +192,23 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                     }
                 } else{
                     img = name[data.name];
-                }   
-                return ({
-                    name: `'${data.name}`,
-                    data: data.data.map((value, index) => [index * data.pointInterval, value]),
-                    visible: (data.name === 'Total' ? true : false),
-                    img: img
-                })
-            }).filter(result => result !== undefined);
-            if(type === 'Healing' && otherDTGraphJSON){
-                const otherDTGraph = otherDTGraphJSON.graph;
-                const otherDTGraphData = {
-                    name: `'Damage Taken`,
-                    data: otherDTGraph.data.map((value, index) => [index * otherDTGraph.pointInterval, value]),
-                    visible: false,
-                    img: undefined
                 }
-                otherSeries.push(otherDTGraphData);
+                setOtherComponentSeries(prev => ({
+                    ...prev,
+                    [data.name]: {'visible':data.id === 'Total' ? true : false, 'img': img}
+                }))
+            });
+            if (otherDTGraphJSON){
+                const otherDTGraph = otherDTGraphJSON.graph;
+                setOtherGraph(prev => ({
+                    ...prev,
+                    ['DTGraph']: otherDTGraph
+                }));
+                setOtherComponentSeries(prev => ({
+                    ...prev,
+                    ['Damage Taken']: {'visible': false, 'img': undefined}
+                }));
             }
-            setOtherGraphData(otherSeries);
             if(timeLength < otherTimeLength){
                 const newTimeLength = Math.ceil(otherTimeLength/1000) * 1000;
                 setTimeLength(newTimeLength);
@@ -159,6 +217,38 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             setIsChartReady(false);
         }
     }, [otherGraphJSON, otherAbilityTable, otherDTGraphJSON]);
+
+    useEffect(() => {
+        let isEmpty = true;
+        for (let key in otherGraph) {
+            if (otherGraph.hasOwnProperty(key)) {
+                isEmpty = false;
+                break; // 첫 번째 키를 찾은 즉시 루프를 종료
+            }
+        }
+        if(!isEmpty && otherComponentSeries && type){
+            const otherSeries = Object.entries(otherGraph.graph).map( ([key,data]) => {
+                return ({
+                    name: `${data.name}`,
+                    data: data.data.map((value, index) => [index * data.pointInterval, value]),
+                    visible: otherComponentSeries[data.name].visible,
+                    img: otherComponentSeries[data.name].img
+                })
+            }).filter(result => result !== undefined);
+            if(otherGraph.DTGraph && (type === 'Healing')){
+                const otherDTGraph = otherGraph.DTGraph;
+                const otherDTGraphData = {
+                    name: `Damage Taken`,
+                    data: otherDTGraph.data.map((value, index) => [index * otherDTGraph.pointInterval, value]),
+                    visible: otherComponentSeries['Damage Taken'].visible,
+                    img: otherComponentSeries['Damage Taken'].img
+                }
+                otherSeries.push(otherDTGraphData);
+            }
+            setOtherGraphData(otherSeries);
+        }
+    }, [otherGraph, otherComponentSeries]);
+
 
     useEffect(() => {
         if(myGraphData){
@@ -183,6 +273,7 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             });
             const filter = {};
             const result = ch.series.map((element) => {
+                console.log(element.userOptions);
                 filter[element.userOptions.name] = element.visible;
                 return {
                     name: element.userOptions.name,
@@ -190,9 +281,7 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                 }
             });
             setChartFilter(filter);
-            console.log(result);
             setChartSeries(result);
-            console.log(tickPos);
         }
     },[isChartReady]);
 
@@ -223,7 +312,6 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             const container = {
                 chart: {
                     type: 'line',
-                    reflow: false,
                     width: timeLength / 10,
                     marginLeft: 150,
                 },
@@ -299,9 +387,9 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                         </div>
                     </div>
                 </div>
-                {isOpen && chartSeries && (
+                {isOpen && chartSeries &&(
                     <div className="checkbox-grid" style = {{height: Math.ceil(chartSeries.length / 4) * 45}}>
-                        {renderTableItems(chartSeries)}
+                        {renderTableItems(chartSeries, componentSeries, setComponentSeries)}
                     </div>
                 )}
             </div>
