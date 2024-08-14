@@ -41,6 +41,14 @@ graph_query = """query($code: String, $sourceID: Int, $dtype: GraphDataType, $fi
             }
             }"""
 
+resource_query = """query($code: String, $fight: Int, $sourceID: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        graph(abilityID: 117, sourceID: $sourceID,  targetID: $sourceID, dataType: Resources, fightIDs: [$fight], startTime: $startTime, endTime:$endTime, translate:false)
+                }
+            }
+            }"""
+
 graph_target_query = """query($code: String, $sourceID: Int, $targetID: Int, $dtype: GraphDataType, $fight: Int, $startTime: Float, $endTime: Float){
                 reportData{
                     report(code: $code){

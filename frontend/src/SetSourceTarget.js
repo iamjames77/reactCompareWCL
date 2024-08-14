@@ -3,7 +3,7 @@ import Dropdown from './dropdown';
 import {get_player_data, getKeyOptions} from './get_api_data';
 import specIconURL from './specIconURL';
 
-function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID, SetSourceName, type, npc, masterNPCs, existOnly}) {
+function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID, SetSourceName, SetSpec, type, npc, masterNPCs, existOnly}) {
     const [sourceIDOptions, setSourceIDOptions] = useState(null);
     const [targetIDOptions, setTargetIDOptions] = useState(null);
     const [initialTargetID, setInitialTargetID] = useState(null);
@@ -79,17 +79,19 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
                 })
                 SetSourceID('ALL');
                 SetSourceName(specIconList);
+                SetSpec('ALL');
                 return;
             }
             const selectedSourceJson = JSON.parse(selectedSource);
             SetSourceID(selectedSourceJson.id);
             SetSourceName(selectedSourceJson.name);
+            SetSpec(selectedSourceJson.specs[0].spec);
         }
     }
 
 
     useEffect(()=>{
-        if (type === 'Healing' && sourceIDOptions){
+        if (type === 'Healing' && sourceIDOptions && masterNPCs){
             const targetList = sourceIDOptions
             if(npc){
                 const npcList = npc.map(item => {
@@ -103,7 +105,7 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
             }
             setTargetIDOptions(targetList);
         }
-        else if (type === 'DamageDone' && npc){
+        else if (type === 'DamageDone' && npc && masterNPCs){
             const targetList = npc.map(item => {
                 const npcINFO = masterNPCs.find(_npc => _npc.gameID === item.gameID);
                 return {
@@ -122,7 +124,7 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
             setTargetIDOptions(null);
         }
         setInitialTargetID('ALL');
-    }, [type, npc, sourceIDOptions])
+    }, [type, npc, sourceIDOptions, masterNPCs])
 
     const setTargetHandler = (selectedTarget) => {
         if(selectedTarget){

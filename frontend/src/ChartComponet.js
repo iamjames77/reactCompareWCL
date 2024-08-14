@@ -4,7 +4,7 @@ import HighchartsReact from 'highcharts-react-official'
 import './dropdown.css';
 
 function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setChartInterval, setChartLeft, setChartWidth, 
-    myDTGraphJSON, otherDTGraphJSON, abilityTable, otherAbilityTable}) {
+    abilityTable, otherAbilityTable}) {
     const [myGraphData, setMyGraphData] = useState(null);
     const [otherGraphData, setOtherGraphData] = useState(null);
     const [graph, setGraph] = useState({});
@@ -16,7 +16,7 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
     const [graphStyle, setGraphStyle] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
     const [chartSeries, setChartSeries] = useState(null);
-    const [chartFilter, setChartFilter] = useState(null);
+    const [otherChartSeries, setOtherChartSeries] = useState(null);
     const [isChartReady, setIsChartReady] = useState(false);
     const [componentSeries, setComponentSeries] = useState({});
     const [otherComponentSeries, setOtherComponentSeries] = useState({});
@@ -47,8 +47,8 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
         return positions;
     };
 
-    const handleToggle = () => {
-        setIsOpen(!isOpen);
+    const handleToggle = (t) => {
+        setIsOpen(isOpen === t ? null : t);
     };
 
     const toggleSeriesVisibility = (name, scS) => {
@@ -83,19 +83,21 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             const name = myGraphJSON.name;
             const graph = myGraphJSON.graph;
             const myTimeLength = myGraphJSON.time;
+            const DTGraph = myGraphJSON.DTGraph;
             setGraph(prev => ({
                 ...prev,
                 ['id']: id,
                 ['name']: name,
                 ['graph']: graph,
+                ['DTGraph']: DTGraph
             }));
             const newComponentSeries = {};
             Object.entries(graph).forEach(([key, data]) => {
                 let img;
                 if(id !== 'ALL'){
-                    const find = abilityTable.find(ability => ability.name === data.name)
+                    const find = abilityTable.find(ability => ability.gameID === data.guid)
                     if(find){
-                        img = `https://wow.zamimg.com/images/wow/icons/large/${find['abilityIcon']}`
+                        img = `https://wow.zamimg.com/images/wow/icons/large/${find['icon']}`
                     }
                     else {
                         img = undefined;
@@ -103,8 +105,6 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                 } else{
                     img = name[data.name];
                 }
-                console.log(data.name);
-                console.log(img);
                 newComponentSeries[data.name] = {
                     visible: data.id === 'Total' ? true : false,
                     img: img,
@@ -112,30 +112,16 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             });
             setComponentSeries(prev => ({
                 ...prev,
-                ...newComponentSeries
+                ...newComponentSeries,
+                ['Damage Taken']: {'visible': false, 'img': undefined}
             }));
-            if (myDTGraphJSON){
-                const myDTGraph = myDTGraphJSON.graph;
-                setGraph(prev => ({
-                    ...prev,
-                    ['DTGraph']: myDTGraph
-                }));
-                setComponentSeries(prev => ({
-                    ...prev,
-                    ['Damage Taken']: {'visible': false, 'img': undefined}
-                }));
-            }
             setDataType(type);
             const newTimeLength = Math.ceil(myTimeLength/1000) * 1000;
             setTimeLength(newTimeLength);
             SetTimeLength(newTimeLength);
             setIsChartReady(false)
         }
-    }, [myGraphJSON, abilityTable, myDTGraphJSON ,type]);
-
-    useEffect(() => {
-        console.log(componentSeries);
-    }, [componentSeries]);
+    }, [myGraphJSON, abilityTable]);
 
     useEffect(() => {
         let isEmpty = true;
@@ -174,12 +160,15 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             const name = otherGraphJSON.name;
             const graph = otherGraphJSON.graph;
             const otherTimeLength = otherGraphJSON.time;
+            const otherDTGraphJSON = otherGraphJSON.DTGraph;
             setOtherGraph(prev => ({
                 ...prev,
                 ['id']: id,
                 ['name']: name,
                 ['graph']: graph,
+                ['DTGraph']: otherDTGraphJSON
             }));
+            const newComponentSeries = {};
             Object.entries(graph).forEach(([key, data]) => {
                 let img;
                 if(id !== 'ALL'){
@@ -193,22 +182,16 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                 } else{
                     img = name[data.name];
                 }
-                setOtherComponentSeries(prev => ({
-                    ...prev,
-                    [data.name]: {'visible':data.id === 'Total' ? true : false, 'img': img}
-                }))
+                newComponentSeries[data.name] = {
+                    visible: data.id === 'Total' ? true : false,
+                    img: img,
+                };
             });
-            if (otherDTGraphJSON){
-                const otherDTGraph = otherDTGraphJSON.graph;
-                setOtherGraph(prev => ({
-                    ...prev,
-                    ['DTGraph']: otherDTGraph
-                }));
-                setOtherComponentSeries(prev => ({
-                    ...prev,
-                    ['Damage Taken']: {'visible': false, 'img': undefined}
-                }));
-            }
+            setOtherComponentSeries(prev => ({
+                ...prev,
+                ...newComponentSeries,
+                ['Damage Taken']: {'visible': false, 'img': undefined}
+            }));
             if(timeLength < otherTimeLength){
                 const newTimeLength = Math.ceil(otherTimeLength/1000) * 1000;
                 setTimeLength(newTimeLength);
@@ -216,7 +199,7 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             }
             setIsChartReady(false);
         }
-    }, [otherGraphJSON, otherAbilityTable, otherDTGraphJSON]);
+    }, [otherGraphJSON, otherAbilityTable]);
 
     useEffect(() => {
         let isEmpty = true;
@@ -271,17 +254,6 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             const tickPos = Object.entries(ticks).map(([key, value]) => {
                 return(value.mark.pathArray[0][1]);
             });
-            const filter = {};
-            const result = ch.series.map((element) => {
-                console.log(element.userOptions);
-                filter[element.userOptions.name] = element.visible;
-                return {
-                    name: element.userOptions.name,
-                    img: element.userOptions.img,
-                }
-            });
-            setChartFilter(filter);
-            setChartSeries(result);
         }
     },[isChartReady]);
 
@@ -307,6 +279,26 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
 
     useEffect(() => {
         if (graphData && dataType && timeLength) {
+            const my = myGraphData.map((data) => {
+                return {
+                    name: data.name,
+                    data: data.data,
+                    img: data.img,
+                }
+            });
+
+            setChartSeries(my);
+            if(otherGraphData){
+                const other = otherGraphData.map((data) => {
+                    return {
+                        name: data.name,
+                        data: data.data,
+                        img: data.img,
+                    }
+                });
+                setOtherChartSeries(other);
+            }
+
             const dType = dataType === 'Healing' ? 'Hps' : 'Dps';
             const tickPositions = generateTickPositions(timeLength, 1000);
             const container = {
@@ -367,12 +359,6 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             })
         }
     }, [timeLength]);
-
-    useEffect(() => {
-        if(chart){
-            console.log('chart changed');
-        }
-    }, [chart]);
     
     return (
         <>
@@ -380,16 +366,31 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                 <div style={{display:'flex', width:'100%', marginBottom:6}}>
                     <div className="checkbox left">
                         <div className= "dropdown">
-                            <div className= {`dropdown-header ${isOpen ? 'open' : ''}`} onClick={handleToggle}>
-                                Enemy Filter
-                                <span className={`dropdown-arrow ${isOpen ? 'open' : ''}`}>▼</span>
+                            <div className= {`dropdown-header ${isOpen === 'my' ? 'open' : ''}`} onClick={() => handleToggle('my')}>
+                                My Report Filter
+                                <span className={`dropdown-arrow ${isOpen === 'my' ? 'open' : ''}`}>▼</span>
                             </div>
                         </div>
                     </div>
+                    {(otherGraphData) && (
+                        <div className="checkbox">
+                            <div className= "dropdown">
+                                <div className= {`dropdown-header ${isOpen === 'other' ? 'open' : ''}`} onClick={() => handleToggle('other')}>
+                                    Other Report Filter
+                                    <span className={`dropdown-arrow ${isOpen === 'other' ? 'open' : ''}`}>▼</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                {isOpen && chartSeries &&(
+                {(isOpen === 'my') && chartSeries &&(
                     <div className="checkbox-grid" style = {{height: Math.ceil(chartSeries.length / 4) * 45}}>
                         {renderTableItems(chartSeries, componentSeries, setComponentSeries)}
+                    </div>
+                )}
+                {(isOpen === 'other') && otherChartSeries &&(
+                    <div className="checkbox-grid" style = {{height: Math.ceil(chartSeries.length / 4) * 45}}>
+                        {renderTableItems(otherChartSeries, otherComponentSeries, setOtherComponentSeries)}
                     </div>
                 )}
             </div>

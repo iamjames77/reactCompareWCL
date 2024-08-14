@@ -21,10 +21,12 @@ def get_api_data(query: str, **kwargs):
 def get_graph_data():
     data = request.get_json()
     report, fight, source, target, dtype, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), data.get('target'), data.get('type'), float(data.get('startTime')), float(data.get('endTime'))
-    print(source)
-    if(source == 'ALL'):
+    if(dtype == 'Resources'):
+        response = get_api_data(resource_query, code=report, fight=fight, sourceID = int(source),startTime=startTime, endTime=endTime)
+        print(response)
+    elif(source == 'ALL'):
         if(target == 'ALL'):
-            response = get_api_data(ALL_graph_query, code=report, fight=fight, dtype=dtype, startTime=startTime, endTime=endTime)
+            response = get_api_data(ALL_graph_query, code=report, fight=fight, dtype=dtype, sourceID=int(source), startTime=startTime, endTime=endTime)
         else:
             response = get_api_data(ALL_graph_target_query, code=report, fight=fight, dtype=dtype, targetID=int(target), startTime=startTime, endTime=endTime)
     else:
