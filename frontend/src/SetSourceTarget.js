@@ -3,7 +3,9 @@ import Dropdown from './dropdown';
 import {get_player_data, getKeyOptions} from './get_api_data';
 import specIconURL from './specIconURL';
 
-function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID, SetSourceName, SetSpec, type, npc, masterNPCs, existOnly}) {
+function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID, SetSourceName, SetSpec, type, friendlyNPC, enemyNPC,masterNPCs, existOnly,
+    setIDDict
+}) {
     const [sourceIDOptions, setSourceIDOptions] = useState(null);
     const [targetIDOptions, setTargetIDOptions] = useState(null);
     const [initialTargetID, setInitialTargetID] = useState(null);
@@ -85,29 +87,24 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
             const selectedSourceJson = JSON.parse(selectedSource);
             SetSourceID(selectedSourceJson.id);
             SetSourceName(selectedSourceJson.name);
-            SetSpec(selectedSourceJson.specs[0].spec);
+            SetSpec({'class': selectedSourceJson.type, 'spec': selectedSourceJson.specs[0].spec});
         }
     }
 
 
     useEffect(()=>{
-        if (type === 'Healing' && sourceIDOptions && masterNPCs){
-            const targetList = sourceIDOptions
-            if(npc){
-                const npcList = npc.map(item => {
-                    const npcINFO = masterNPCs.find(_npc => _npc.gameID === item.gameID);
-                    return {
-                        value: JSON.stringify({id: item.id}),
-                        text: npcINFO.name,
-                    }
-                });
-                targetList.push(...npcList);
-            }
-            setTargetIDOptions(targetList);
-        }
-        else if (type === 'DamageDone' && npc && masterNPCs){
-            const targetList = npc.map(item => {
-                const npcINFO = masterNPCs.find(_npc => _npc.gameID === item.gameID);
+        if (sourceIDOptions && masterNPCs && friendlyNPC && enemyNPC){
+            const friendlyList = sourceIDOptions
+            const npcList = friendlyNPC.map(item => {
+                const npcINFO = masterNPCs.find(npc => npc.gameID === item.gameID);
+                return {
+                    value: JSON.stringify({id: item.id}),
+                    text: npcINFO.name,
+                }
+            });
+            friendlyList.push(...npcList);
+            const enemyList = enemyNPC.map(item => {
+                const npcINFO = masterNPCs.find(npc => npc.gameID === item.gameID);
                 return {
                     value: JSON.stringify({id: item.id}),
                     text: npcINFO.name,
@@ -118,13 +115,28 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
                 text: 'ALL',
                 imageURL: 'https://wow.zamimg.com/images/wow/icons/large/ui_greenflag.jpg'
             }
-            setTargetIDOptions([AllOption, ...targetList]);
+            if(type === 'Healing'){
+                setTargetIDOptions(friendlyList);
+            }
+            else {
+                setTargetIDOptions([AllOption, ...enemyList]);
+            }
+            const dict = {}
+            friendlyList.forEach(item => {
+                if(item.value !== 'ALL'){
+                    dict[JSON.parse(item.value).id] = item.text;
+                }
+            });
+            enemyList.forEach(item => {
+                dict[JSON.parse(item.value).id] = item.text;
+            });
+            setIDDict(dict);
         }
         else{
             setTargetIDOptions(null);
         }
         setInitialTargetID('ALL');
-    }, [type, npc, sourceIDOptions, masterNPCs])
+    }, [type, friendlyNPC, enemyNPC,sourceIDOptions, masterNPCs])
 
     const setTargetHandler = (selectedTarget) => {
         if(selectedTarget){

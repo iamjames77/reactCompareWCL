@@ -204,3 +204,19 @@ export function get_hostility_event_data(reportID, fight, source, startTime, end
     )
     .catch(err => console.error('Error fetching data'));
 }
+
+export function get_resource_data(reportID, fight, source, abilityID, startTime, endTime, type, byTarget){
+  return fetch('/get_resource_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reportID, fight, source, abilityID, startTime, endTime, type, byTarget }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
+}

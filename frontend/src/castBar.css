@@ -1,8 +1,9 @@
 .bar {
     position: relative; 
-    display:'flex'; 
+    display: flex; 
     height: 40px;
     background-color: white;
+    flex-direction: row;
 }
 
 .bar-text {
@@ -12,4 +13,44 @@
     display: flex;
     align-items: center;
     height: 100%;
+}
+
+.bar-img {
+    width: 30px;
+    height: 30px;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%; /* Adjust this to position the tooltip above or below the image */
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    white-space: pre-wrap;
+}
+
+.tooltip-text::after {
+    content: '';
+    position: absolute;
+    top: 100%; /* Arrow at the bottom of the tooltip */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: black transparent transparent transparent;
+}
+
+a{
+    height: 30px;
+}
+
+.timeline-bar:hover .tooltip-text {
+    visibility: visible;
 }

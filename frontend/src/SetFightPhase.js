@@ -41,8 +41,6 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
         });
         const flatfightIDOption = fightIDOption.flat().reverse();
         setFightIDOptions(flatfightIDOption);
-        setFightID(null);
-        SetFightID(null);
         if(!flatfightIDOption){
             console.log('No fight data');
             SetError('No fight data');
@@ -69,6 +67,10 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
             setPhaseOptions();
         }
     }, [fightID]);
+
+    useEffect(() => {
+        setPhaseIDOptions(null);
+    }, [FightIDOptions]);
 
     const setPhaseOptions= () => {
         get_phase_info(ReportID).then(data => {

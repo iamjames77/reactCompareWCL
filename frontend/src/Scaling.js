@@ -9,8 +9,8 @@ function Scaling({timeLength, chartInterval, chartLeft, chartWidth}) {
         const seconds = Math.floor(totalSeconds % 60);
         return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
     };
-
-    for (let i =0; i<totalSeconds; i++){
+    
+    for (let i =0; i<=totalSeconds; i++){
         component.push(
         <div>
             <div style={{left: i * chartInterval + chartLeft - 15, position: 'absolute', color:'white', fontSize: 19}}>

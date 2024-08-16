@@ -114,3 +114,13 @@
     height: 2px; /* 밑줄의 두께 */
     background-color: black; /* 밑줄 색상 */
 }
+
+.chartbox {
+    width: calc(25% - 6px);
+    margin: 0px 3px 0px 3px;
+    height: 45px;
+}
+
+.chartbox.left {
+    margin-left: 0;
+}

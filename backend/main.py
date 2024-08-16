@@ -21,12 +21,9 @@ def get_api_data(query: str, **kwargs):
 def get_graph_data():
     data = request.get_json()
     report, fight, source, target, dtype, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), data.get('target'), data.get('type'), float(data.get('startTime')), float(data.get('endTime'))
-    if(dtype == 'Resources'):
-        response = get_api_data(resource_query, code=report, fight=fight, sourceID = int(source),startTime=startTime, endTime=endTime)
-        print(response)
-    elif(source == 'ALL'):
+    if(source == 'ALL'):
         if(target == 'ALL'):
-            response = get_api_data(ALL_graph_query, code=report, fight=fight, dtype=dtype, sourceID=int(source), startTime=startTime, endTime=endTime)
+            response = get_api_data(ALL_graph_query, code=report, fight=fight, dtype=dtype, startTime=startTime, endTime=endTime)
         else:
             response = get_api_data(ALL_graph_target_query, code=report, fight=fight, dtype=dtype, targetID=int(target), startTime=startTime, endTime=endTime)
     else:
@@ -105,6 +102,16 @@ def get_hostility_event_data():
     data = request.get_json()
     report, fight, source, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), float(data.get('startTime')), float(data.get('endTime'))
     response = get_api_data(get_hostility_event_query, code=report, fight= fight, sourceID=source, startTime= startTime, endTime = endTime)
+    return jsonify(response)
+
+@app.route('/get_resource_data', methods=['POST'])
+def get_resource_data():
+    data = request.get_json()
+    report, fight, source, abilityID, startTime, endTime, type, byTarget = data.get('reportID'), int(data.get('fight')), data.get('source'), data.get('abilityID'),float(data.get('startTime')), float(data.get('endTime')), data.get('type'), data.get('byTarget')
+    if(byTarget):
+        response = get_api_data(get_resource_query, code=report, fight= fight, targetID=source, abilityID=abilityID,startTime= startTime, endTime = endTime, type = type)
+    else:
+        response = get_api_data(get_resource_query, code=report, fight= fight, sourceID=source, targetID=source, abilityID=abilityID,startTime= startTime, endTime = endTime, type = type)
     return jsonify(response)
 
 @app.route('/', defaults={'path': ''})

@@ -3,24 +3,21 @@ import Highcharts, { time } from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import './dropdown.css';
 
-function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setChartInterval, setChartLeft, setChartWidth, 
-    abilityTable, otherAbilityTable}) {
+function ChartComponent({myGraphJSON, otherGraphJSON, type, timeLength, abilityTable, otherAbilityTable}) {
     const [myGraphData, setMyGraphData] = useState(null);
     const [otherGraphData, setOtherGraphData] = useState(null);
     const [graph, setGraph] = useState({});
     const [otherGraph, setOtherGraph] = useState({});
     const [graphData, setGraphData] = useState(null);
     const [dataType, setDataType] = useState(null);
-    const [timeLength, setTimeLength] = useState(0);
     const [chart, setChart] = useState(null);
     const [graphStyle, setGraphStyle] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
     const [chartSeries, setChartSeries] = useState(null);
     const [otherChartSeries, setOtherChartSeries] = useState(null);
-    const [isChartReady, setIsChartReady] = useState(false);
     const [componentSeries, setComponentSeries] = useState({});
     const [otherComponentSeries, setOtherComponentSeries] = useState({});
-    const chartRef = useRef(null);
+    const [expanded, setExpanded] = useState(true);
 
     // Helper functions
     const millisecondsToMinutesAndSeconds = (ms) => {
@@ -68,7 +65,9 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                     <input type="checkbox" id={item.name} name={item.name}
                     checked = {cS[item.name].visible}
                     onChange={()=> toggleSeriesVisibility(item.name, scS)}/>
-                    <img src={item.img} alt="" className="dropdown-icon"/>
+                    <a href={item.id ? 'https://www.wowhead.com/spell=' + item.id : '#'} target={item.id ? "_blank" : "_self"}  rel="noreferrer">
+                        <img src={item.img} alt="" className="dropdown-icon"/>
+                    </a>
                     <label htmlFor={item}>{item.name}</label>
                 </div>
             );
@@ -82,7 +81,6 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             const id = myGraphJSON.id;
             const name = myGraphJSON.name;
             const graph = myGraphJSON.graph;
-            const myTimeLength = myGraphJSON.time;
             const DTGraph = myGraphJSON.DTGraph;
             setGraph(prev => ({
                 ...prev,
@@ -116,10 +114,6 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                 ['Damage Taken']: {'visible': false, 'img': undefined}
             }));
             setDataType(type);
-            const newTimeLength = Math.ceil(myTimeLength/1000) * 1000;
-            setTimeLength(newTimeLength);
-            SetTimeLength(newTimeLength);
-            setIsChartReady(false)
         }
     }, [myGraphJSON, abilityTable]);
 
@@ -137,7 +131,8 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                     name: `${data.name}`,
                     data: data.data.map((value, index) => [index * data.pointInterval, value]),
                     visible: componentSeries[data.name].visible,
-                    img: componentSeries[data.name].img
+                    img: componentSeries[data.name].img,
+                    id: graph.id !== 'ALL' ? data.guid : null,
                 })
             }).filter(result => result !== undefined);
             if(graph.DTGraph && (type === 'Healing')){
@@ -146,7 +141,8 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                     name: `Damage Taken`,
                     data: myDTGraph.data.map((value, index) => [index * myDTGraph.pointInterval, value]),
                     visible: componentSeries['Damage Taken'].visible,
-                    img: componentSeries['Damage Taken'].img
+                    img: null,
+                    id: null
                 }
                 mySeries.push(myDTGraphData);
             }
@@ -159,7 +155,6 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             const id = otherGraphJSON.id;
             const name = otherGraphJSON.name;
             const graph = otherGraphJSON.graph;
-            const otherTimeLength = otherGraphJSON.time;
             const otherDTGraphJSON = otherGraphJSON.DTGraph;
             setOtherGraph(prev => ({
                 ...prev,
@@ -172,9 +167,9 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             Object.entries(graph).forEach(([key, data]) => {
                 let img;
                 if(id !== 'ALL'){
-                    const find = otherAbilityTable.find(ability => ability.name === data.name)
+                    const find = otherAbilityTable.find(ability => ability.gameID === data.guid)
                     if(find){
-                        img = `https://wow.zamimg.com/images/wow/icons/large/${find['abilityIcon']}`
+                        img = `https://wow.zamimg.com/images/wow/icons/large/${find['icon']}`
                     }
                     else {
                         img = undefined;
@@ -192,12 +187,6 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                 ...newComponentSeries,
                 ['Damage Taken']: {'visible': false, 'img': undefined}
             }));
-            if(timeLength < otherTimeLength){
-                const newTimeLength = Math.ceil(otherTimeLength/1000) * 1000;
-                setTimeLength(newTimeLength);
-                SetTimeLength(newTimeLength);
-            }
-            setIsChartReady(false);
         }
     }, [otherGraphJSON, otherAbilityTable]);
 
@@ -215,7 +204,8 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                     name: `${data.name}`,
                     data: data.data.map((value, index) => [index * data.pointInterval, value]),
                     visible: otherComponentSeries[data.name].visible,
-                    img: otherComponentSeries[data.name].img
+                    img: otherComponentSeries[data.name].img,
+                    id: otherGraph.id !== 'ALL' ? data.guid : null,
                 })
             }).filter(result => result !== undefined);
             if(otherGraph.DTGraph && (type === 'Healing')){
@@ -224,7 +214,8 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                     name: `Damage Taken`,
                     data: otherDTGraph.data.map((value, index) => [index * otherDTGraph.pointInterval, value]),
                     visible: otherComponentSeries['Damage Taken'].visible,
-                    img: otherComponentSeries['Damage Taken'].img
+                    img: otherComponentSeries['Damage Taken'].img,
+                    id: null
                 }
                 otherSeries.push(otherDTGraphData);
             }
@@ -244,46 +235,13 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
     }, [myGraphData, otherGraphData]);
 
     useEffect(() => {
-        if (isChartReady) {
-            const ch = chartRef.current.chart;
-            const plotLeft = ch.plotLeft;
-            setChartInterval(ch.plotWidth / timeLength * 1000);
-            setChartWidth(ch.plotWidth + (ch.marginRight || 0));
-            setChartLeft(plotLeft);
-            const ticks=  ch.xAxis[0].ticks;
-            const tickPos = Object.entries(ticks).map(([key, value]) => {
-                return(value.mark.pathArray[0][1]);
-            });
-        }
-    },[isChartReady]);
-
-    useEffect(() => {
-        const checkChartReady = () => {
-          if (chartRef.current && chartRef.current.chart &&
-            chartRef.current.chart.xAxis &&
-            chartRef.current.chart.xAxis[0].ticks &&
-            chartRef.current.chart.xAxis[0].ticks[0].mark &&
-            chartRef.current.chart.xAxis[0].ticks[0].mark.pathArray[0][1]
-          ) {
-            setIsChartReady(true);
-          } else {
-            // chart 객체가 아직 준비되지 않았다면 짧은 지연 후 다시 확인
-            setTimeout(checkChartReady, 100);
-          }
-        };
-    
-        if(!isChartReady){
-            checkChartReady();
-        }
-      }, [isChartReady]);
-
-    useEffect(() => {
         if (graphData && dataType && timeLength) {
             const my = myGraphData.map((data) => {
                 return {
                     name: data.name,
                     data: data.data,
                     img: data.img,
+                    id: data.id
                 }
             });
 
@@ -294,18 +252,20 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                         name: data.name,
                         data: data.data,
                         img: data.img,
+                        id: data.id
                     }
                 });
                 setOtherChartSeries(other);
             }
 
             const dType = dataType === 'Healing' ? 'Hps' : 'Dps';
-            const tickPositions = generateTickPositions(timeLength, 1000);
+            const tickPositions = expanded ? generateTickPositions(timeLength, 1000) : generateTickPositions(timeLength, 10000);
             const container = {
                 chart: {
                     type: 'line',
-                    width: timeLength / 10,
-                    marginLeft: 150,
+                    width: expanded ? timeLength / 10 + 170 : null,
+                    marginLeft: expanded ? 150 : null, 
+                    marginRight: expanded ? 20 : null,
                 },
                 title: {
                     text: `${dType} Graph`
@@ -349,22 +309,30 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
             };
             setChart(container);
         }
-    }, [graphData, dataType, timeLength]);
+    }, [graphData, dataType, timeLength, expanded]);
 
     useEffect(() => {
-        if(timeLength>0){
-            setGraphStyle({
-                width: `${(timeLength/10)}px`,
-                overflowX: 'auto',
-            })
+        if(timeLength){
+            if (expanded){
+                setGraphStyle({
+                    width: `${(timeLength/10) + 170}px`,
+                    overflowX: 'auto',
+                })
+            } else {
+                setGraphStyle({
+                    width: '100%',
+                    position: 'sticky',
+                    left: 0,
+                })
+            }
         }
-    }, [timeLength]);
+    }, [timeLength, expanded]);
     
     return (
         <>
-            <div style={{position:'sticky', left:0}}>
-                <div style={{display:'flex', width:'100%', marginBottom:6}}>
-                    <div className="checkbox left">
+            <div style={{position:'sticky', left:0, marginBottom: 6}}>
+                <div style={{display:'flex', width:'100%'}}>
+                    <div className="chartbox left">
                         <div className= "dropdown">
                             <div className= {`dropdown-header ${isOpen === 'my' ? 'open' : ''}`} onClick={() => handleToggle('my')}>
                                 My Report Filter
@@ -373,7 +341,7 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                         </div>
                     </div>
                     {(otherGraphData) && (
-                        <div className="checkbox">
+                        <div className="chartbox" style= {{marginLeft:3}}>
                             <div className= "dropdown">
                                 <div className= {`dropdown-header ${isOpen === 'other' ? 'open' : ''}`} onClick={() => handleToggle('other')}>
                                     Other Report Filter
@@ -382,6 +350,10 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                             </div>
                         </div>
                     )}
+                    <div className="checkbox-item" style={{color:'white'}}>
+                        <input type="checkbox" id="all" name="all" checked={expanded} onChange={()=> setExpanded(!expanded)}/>
+                        <label htmlFor="all">Expand</label>
+                    </div>
                 </div>
                 {(isOpen === 'my') && chartSeries &&(
                     <div className="checkbox-grid" style = {{height: Math.ceil(chartSeries.length / 4) * 45}}>
@@ -395,7 +367,7 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, SetTimeLength, setCh
                 )}
             </div>
             <div style={graphStyle}>
-                <HighchartsReact containerProps={{ style: {width:'100%' } }} highcharts={Highcharts} options={chart} ref={chartRef}/>
+                <HighchartsReact containerProps={{ style: {width:'100%' } }} highcharts={Highcharts} options={chart}/>
             </div>
         </>
     );

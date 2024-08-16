@@ -1,0 +1,134 @@
+{
+    "DeathKnight": {
+        "Blood" : [
+            {"type": "Resources", "name": "Runes", "spell": 105}
+        ],
+        "Unholy": [
+            {"type": "Resources", "name": "Runes", "spell": 105}
+        ],
+        "Frost": [
+            {"type": "Resources", "name": "Runes", "spell": 105}
+        ]},
+    "DemonHunter": {
+        "Havoc": [
+            {"type": "Resources", "name": "Fury", "spell": 117}
+        ],
+        "Vengeance": [
+            {"type": "Resources", "name": "Fury", "spell": 117}
+        ]},
+    "Druid": {
+        "Balance":[
+
+        ],
+        "Feral":[
+            {"type": "Resources", "name": "Combo Points", "spell": 104}
+        ],
+        "Guardian":[
+
+        ],
+        "Restoration":[
+
+        ]},
+    "Evoker":{
+        "Devastation": [
+
+        ],
+        "Augmentation": [
+
+        ],
+        "Preservation": [
+
+        ]},
+    "Hunter":{
+        "BeastMastery":[
+
+        ],
+        "Marksmanship":[
+
+        ],
+        "Survival":[
+
+        ]},
+    "Mage": {
+        "Arcane": [
+            {"type": "Resources", "name": "Arcane Charges", "spell": 116}
+        ],
+        "Fire": [
+            {"type": "Buffs", "name": "Sun King's Blessing", "spell": 383882}
+        ],
+        "Frost":{
+
+        }},
+    "Monk": {
+        "Windwalker":[
+            {"type": "Resources", "name": "Chi", "spell": 112}
+        ],
+        "Mistweaver":[
+
+        ],
+        "Brewmaster":[
+            
+        ]},
+    "Paladin": {
+        "Holy":[
+            {"type": "Resources", "name": "Holy Power", "spell": 109}
+        ],
+        "Protection":[
+            {"type": "Resources", "name": "Holy Power", "spell": 109}
+        ],
+        "Retribution":[
+            {"type": "Resources", "name": "Holy Power", "spell": 109}
+        ]},
+    "Priest": {
+        "Discipline":[
+            {"type": "Buffs", "name": "Atonement", "spell": 194384, "byTarget": true}
+        ],
+        "Holy":[
+
+        ],
+        "Shadow":[
+            {"type": "Resources", "name": "Insanity", "spell": 113}
+        ]},
+    "Rogue": {
+        "Assassination":[
+            {"type": "Resources", "name": "Combo Points", "spell": 104}
+        ],
+        "Outlaw":[
+            {"type": "Resources", "name": "Combo Points", "spell": 104}
+        ],
+        "Subtlety":[
+            {"type": "Resources", "name": "Combo Points", "spell": 104}
+        ]
+      },
+    "Shaman": {
+        "Elemental":[
+            {"type": "Resources", "name": "Maelstorm", "spell": 111}
+        ],
+        "Enhancement":[
+            {"type": "Buffs", "name": "Maelstorm", "spell": 344179}
+        ],
+        "Restoration":[
+
+        ]},
+    "Warlock": {
+        "Affliction":[
+            {"type": "Resources", "name": "Soul Shards", "spell": 110}
+        ],
+        "Demonology":[
+            {"type": "Resources", "name": "Soul Shards", "spell": 110}
+        ],
+        "Destruction":[
+            {"type": "Resources", "name": "Soul Shards", "spell": 110}
+        ]},
+    "Warrior": {
+        "Arms":[
+
+        ],
+        "Fury":[
+
+        ],
+        "Protection":[
+
+        ]}
+  }
+  

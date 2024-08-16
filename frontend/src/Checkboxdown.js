@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { get_hostility_table_data } from './get_api_data';
 import './dropdown.css';
+import ColorThief from 'colorthief';
 
 function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, masterNPCs, enemyNPCs, 
     buff, globalBuff, cast, otherBuff, otherGlobalBuff, otherCast,
-    setSelectedEnemy, setSelectedBuff, setSelectedOtherBuff,setSelectedCast, setSelectedOtherCast, setSelectedEnemyCast,
+    setSelectedEnemy, setSelectedBuff, setSelectedOtherBuff,setSelectedCast, setSelectedOtherCast, setEnemyCastTable, SetEnemyCastFilter,
     startTime,endTime
 }) {
     const [openDropdown, setOpenDropdown] = useState(null);
-    const [enemyNPCsInfo, setEnemyNPCsInfo] = useState([]);
     const [externalBuff, setExternalBuff] = useState({});
     const [otherExternalBuff, setOtherExternalBuff] = useState({});
-    const [enemyFilter, setEnemyFilter] = useState({});
     const [buffFilter, setBuffFilter] = useState({});
     const [playerCastFilter, setPlayerCastFilter] = useState({});
     const [otherPlayerCastFilter, setOtherPlayerCastFilter] = useState({});
-    const [enemyCastFilter, setEnemyCastFilter] = useState({});
     const [castFilter, setCastFilter] = useState({});
+    
+    const [castTable, setCastTable] = useState(null);
+    const [otherCastTable, setOtherCastTable] = useState(null);
 
-    const [enemySelected, setEnemySelected] = useState(null);
-    const [enemyCast, setEnemyCast] = useState([]);
+    const [enemyCastFilter, setEnemyCastFilter] = useState({});
+    const [enemyCast, setEnemyCast] = useState({});
     const [enemyCastLength, setEnemyCastLength] = useState(0);
     
     const handleToggle = (dropdown) => {
@@ -37,18 +38,50 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         }));
     };
 
+    const handleEnemy = (event, len) => {
+        const checkbox = event.target;
+        const isChecked = checkbox.checked;
+        const itemID = checkbox.id;
+        setEnemyCast(prevState => ({
+            ...prevState,
+            [itemID]: {
+                ...prevState[itemID],
+                visibility: isChecked,
+            },
+        }));
+        if(isChecked){
+            setEnemyCastLength(prev => prev + 45 * (Math.ceil(len/4) + 1));
+        }
+        else{
+            setEnemyCastLength(prev => prev - 45 * (Math.ceil(len/4) + 1));
+        }
+    };
+
+    const handleEnemyCast = (event, gameID) => {
+        const checkbox = event.target;
+        const isChecked = checkbox.checked;
+        const itemID = Number(checkbox.id);
+
+        setEnemyCastFilter(prevState => ({
+            ...prevState,
+            [gameID]: {
+                ...prevState[gameID],
+                [itemID]: isChecked,
+            },
+        }));
+    };
+
     const enemyRenderCheckboxItems = (items) => {
-        const result = items.map((item, index) => {
+        const result = Object.entries(items).map(([index, item]) => {
             return (
-                <div key={index} className="checkbox-item">
-                    <input type="checkbox" id={item.id} name={item.name} 
-                    checked = {enemyFilter[item.id] || false}
-                    onChange={(e) => handleCheckboxChange(e, setEnemyFilter)}/>
+                <div key={item.id} className="checkbox-item">
+                    <input type="checkbox" id={index} name={item.name} 
+                    checked = {item.visibility || false}
+                    onChange={(e) => handleEnemy(e, item.cast.length)}/>
                     <label htmlFor={item}>{item.name}</label>
                 </div>
             );
         });
-
         return result;
     };
 
@@ -74,7 +107,7 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
             return (
                 <div key={index} className="checkbox-item">
                     <input type="checkbox" id={item.guid} name={item.name}
-                    checked = {castFilter[item.guid] || false}
+                    checked = {item['visibility'] || false}
                     onChange={(e)=> handleCheckboxChange(e, setCastFilter)}/>
                     <a href ={'https://www.wowhead.com/spell=' + item.guid} target="_blank" rel="noreferrer">
                         <img src={`https://wow.zamimg.com/images/wow/icons/large/${item.abilityIcon}`} alt="" className="dropdown-icon"/>
@@ -86,17 +119,38 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         return result
     };
 
-    //선택된 적 NPC 정보를 가져옴
-    useEffect(() => {
-        if(enemyFilter && enemyNPCsInfo) {
-            const selected = Object.keys(enemyFilter).filter((key) => enemyFilter[key]);
-            const result = selected.map( (id) => {
-                return enemyNPCsInfo.find((npc) => npc.id === Number(id));
-            })
-            setEnemySelected(result);
-            setSelectedEnemy(result);
-        }
-    }, [enemyFilter, enemyNPCsInfo]);
+    const enemyCastRender = (enemyCast, gameID) => {
+        const result = Object.entries(enemyCast).map(([index, item]) => {
+            return (
+                <div key={index} className="checkbox-item">
+                    <input type="checkbox" id={index}
+                    checked = {enemyCastFilter[gameID][index] || false}
+                    onChange={(e)=> handleEnemyCast(e, gameID)}/>
+                    <a href ={'https://www.wowhead.com/spell=' + index} target="_blank" rel="noreferrer">
+                        <img src={`https://wow.zamimg.com/images/wow/icons/large/${item.abilityIcon}`} alt="" className="dropdown-icon"/>
+                    </a>
+                    <label htmlFor={item}>{item.name}</label>
+                </div>
+            );
+        })
+        return result;
+    };
+
+    const getColorFromImage = async (imageSrc) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.src = imageSrc;
+            img.onload = () => {
+                const colorThief = new ColorThief();
+                const color = colorThief.getColor(img);
+                resolve(color);
+            };
+            img.onerror = () => {
+                resolve([0, 0, 0]); // 오류 발생 시 기본 색상
+            };
+        });
+    };
 
     //선택된 Buff 정보를 가져옴
     useEffect(() => {
@@ -125,49 +179,106 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         if(castFilter && cast) {
             const result = {};
             cast.forEach((ability) => {
-                if(castFilter[ability.guid]) {
-                    result[ability.guid] = {'name': ability.name, 'abilityIcon': ability.abilityIcon};
-                }
+                const iconColor = 'black';
+                result[ability.guid] = {
+                    'name': ability.name, 
+                    'abilityIcon': ability.abilityIcon,
+                    'iconColor': iconColor,
+                    'visibility': castFilter[ability.guid] ? true : false
+                };
             })
             setSelectedCast(result);
         }
         if(castFilter && otherCast) {
             const result = {};
             otherCast.forEach((ability) => {
-                if(castFilter[ability.guid]) {
-                    result[ability.guid] = {'name': ability.name, 'abilityIcon': ability.abilityIcon};
-                }
+                const iconColor = 'black';
+                result[ability.guid] = {
+                    'name': ability.name, 
+                    'abilityIcon': ability.abilityIcon,
+                    'iconColor': iconColor,
+                    'visibility': castFilter[ability.guid] ? true : false
+                };
             })
             setSelectedOtherCast(result);
-        }
-        if (castFilter && enemyCast) {
-            const result = {};
-            enemyCast.forEach((enemy) => {
-                const cast = enemy.cast.filter((ability) => castFilter[ability.guid]);
-                if(cast.length > 0) {
-                    result[enemy.name] = cast;
-                }
-            });
-            setSelectedEnemyCast(result);
         }
     }, [castFilter]);
 
    //BOSS 타입인 경우 Check
     useEffect(() => {
-        if(enemyNPCs && masterNPCs) {
-            const initialEnemy = {};
-            const enemyINFOs = [];
-            enemyNPCs.forEach((enemy) => {
-                const enemyINFO = masterNPCs.find((npc) => npc.gameID === enemy.gameID && npc.id === enemy.id)
-                if (enemyINFO.subType === 'Boss') {
-                    initialEnemy[enemyINFO.id] = true;
-                }
-                enemyINFOs.push(enemyINFO);
-            });
-            setEnemyFilter(initialEnemy);
-            setEnemyNPCsInfo(enemyINFOs);
-        }
+        const fetchEnemyTable = async () => {
+            if(enemyNPCs && masterNPCs) {
+                const ec = {};
+                const ecf = {};
+                const promises = enemyNPCs.map(async (enemy) => {
+                    if(!enemyCast[enemy.gameID]) {
+                        const data = await get_hostility_table_data(reportID, fight, enemy.id, startTime, endTime);
+                        const enemyINFO = masterNPCs.find((npc) => npc.gameID === enemy.gameID && npc.id === enemy.id)
+                        const castData = data.data.reportData.report.table.data.entries
+                        const cD = {};
+                        Object.values(castData).forEach(async (ability) => {
+                            const color = await getColorFromImage(`https://wow.zamimg.com/images/wow/icons/large/${ability.abilityIcon}`);
+                            console.log(color);
+                            cD[ability.guid] = {
+                                'name': ability.name,
+                                'abilityIcon': ability.abilityIcon,
+                                'iconColor': color,
+                            }
+                        });
+                        if(enemyINFO && enemyINFO.subType === 'Boss') {
+                            setEnemyCastLength(prev => prev + 45 * (Math.ceil(castData.length/4) + 1));
+                        }
+                        ec[enemy.gameID]={
+                            'name': enemyINFO.name, 
+                            'cast': cD, 
+                            'visibility': (enemyINFO && enemyINFO.subType === 'Boss'),
+                        };
+                        const cF = {};
+                        Object.values(castData).forEach((ability) => {
+                            cF[ability.guid] = true;
+                        });
+                        ecf[enemy.gameID] = cF;
+                    }
+                });
+
+                await Promise.all(promises);
+                setEnemyCast(prevState => ({
+                    ...prevState,
+                    ...ec,
+                }));
+                setEnemyCastFilter(prevState => ({
+                    ...prevState,
+                    ...ecf,
+                }));
+            }
+        };
+
+        fetchEnemyTable();
     }, [enemyNPCs, masterNPCs]);
+
+    useEffect(() => {
+        if(enemyCast) {
+            const ec = {};
+            enemyNPCs.forEach((enemy) => {
+                if(enemyCast[enemy.gameID] && enemyCast[enemy.gameID].visibility) {
+                    ec[enemy.id] = enemyCast[enemy.gameID];
+                }
+            });
+            setEnemyCastTable(ec);
+        }
+    }, [enemyCast]);
+
+    useEffect(() => {
+        if(enemyCastFilter) {
+            const ecf = {};
+            enemyNPCs.forEach((enemy) => {
+                if(enemyCastFilter[enemy.gameID]) {
+                    ecf[enemy.id] = enemyCastFilter[enemy.gameID];
+                }
+            });
+            SetEnemyCastFilter(ecf);
+        }
+    }, [enemyCastFilter]);
 
     //Global Buff 정보를 가져옴
     useEffect( () => {
@@ -195,29 +306,6 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         }
     }, [otherBuff, otherGlobalBuff])
 
-
-    //선택된 적들의 캐스트 정보를 가져옴
-    useEffect(() => {
-        if(enemySelected) {
-            enemySelected.forEach((enemy) => {
-                get_hostility_table_data(reportID, fight, enemy.id, startTime, endTime).then((data) => {
-                    setEnemyCast((prev) => {
-                        const castData = data.data.reportData.report.table.data.entries;
-                        return prev.concat({'name': enemy.name, 'cast': castData});
-                    });
-                });
-            });
-        }
-    }, [enemySelected]);
-
-    //적 캐스트 길이 업데이트
-    useEffect(() => {
-        let castLength = 0;
-        enemyCast.forEach((enemy) => {
-            castLength += enemy.cast.length;
-        });
-        setEnemyCastLength(castLength);
-    }, [enemyCast]);
     
     //cast checkbox 초기화
     useEffect(() => {
@@ -230,6 +318,20 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         }
     },[cast]);
 
+    useEffect(() => {
+        if(cast){
+            const cs = {};
+            cast.forEach((ability) => {
+                cs[ability.guid] = {
+                    'name': ability.name,
+                    'abilityIcon': ability.abilityIcon,
+                    'visibility': true
+                }
+            })
+            setCastTable(cs);
+        }
+    }, [cast])
+
     //otherCast checkbox 초기화
     useEffect(() => {
         if(otherCast) {
@@ -241,23 +343,24 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         }
     },[otherCast]);
 
-    //enemyCast checkbox 초기화
     useEffect(() => {
-        if(enemyCast){            
-            const initialCast = {};
-            enemyCast.forEach((enemy) => {
-                enemy.cast.forEach((ability) => {
-                    initialCast[ability.guid] = true;
-                });
-            });
-            setEnemyCastFilter(initialCast);
+        if(otherCast){
+            const ocs ={};
+            otherCast.forEach((ability) => {
+                ocs[ability.guid] = {
+                    'name': ability.name,
+                    'abilityIcon': ability.abilityIcon,
+                    'visibility': true
+                }
+            })
+            setOtherCastTable(ocs);
         }
-    }, [enemyCast]);
+    }, [otherCast])
 
     //castFilter 업데이트
     useEffect(() => {
-        setCastFilter({...playerCastFilter, ...otherPlayerCastFilter ,...enemyCastFilter});
-    }, [playerCastFilter, otherPlayerCastFilter,enemyCastFilter]);
+        setCastFilter({...playerCastFilter, ...otherPlayerCastFilter});
+    }, [playerCastFilter, otherPlayerCastFilter]);
 
     return (
         <div style={{position:'sticky', left:0}}>
@@ -295,9 +398,9 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                     </div>
                 </div>    
             </div>
-            {openDropdown === 'enemyNPCs' && enemyNPCs && (
+            {(openDropdown === 'enemyNPCs') && enemyCast && (
                 <div className="checkbox-grid" style = {{height: Math.ceil(enemyNPCs.length / 4) * 45}}>
-                    {enemyRenderCheckboxItems(enemyNPCsInfo)}
+                    {enemyRenderCheckboxItems(enemyCast)}
                 </div>
             )}
             {openDropdown === 'buff' &&  buff && (
@@ -342,19 +445,19 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                 <div className="checkbox-grid" style = {{height: 0 
                 + (cast ?(Math.ceil(cast.length / 4) + 1) * 45 : 0)
                 + (otherCast ?(Math.ceil(otherCast.length/4) + 1) * 45 : 0)
-                + (enemyCast ?(Math.ceil(enemyCastLength/4) + 1) * 45 : 0)}}>
-                    {enemyCast && (
-                    <>
-                        {enemyCast.map((enemy) => (
-                            <>
-                            <div className="checkbox-text">
-                                {enemy.name}
-                            </div>
-                            {castRenderCheckboxItems(enemy.cast)}
-                            </>
-                        ))}
-                    </>
-                    )}
+                + (enemyCast ? enemyCastLength : 0)}}>
+                    {enemyCast && enemyNPCs && enemyNPCs.map((enemy) => {
+                        if(enemyCast[enemy.gameID] && enemyCast[enemy.gameID].visibility) {
+                            return (
+                                <>
+                                    <div className="checkbox-text">
+                                        {enemyCast[enemy.gameID].name} Cast
+                                    </div>
+                                    {enemyCastRender(enemyCast[enemy.gameID].cast, enemy.gameID)}
+                                </>
+                            )
+                        }
+                    })}
                     {cast && (
                     <>
                        <div className="checkbox-text">
