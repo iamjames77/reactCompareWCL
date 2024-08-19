@@ -9,8 +9,10 @@ import SetFightPhase from './SetFightPhase';
 import SetSourceTarget from './SetSourceTarget';
 import Scaling from './Scaling';
 import Checkboxdown from './Checkboxdown';
-import BossCast from './BossCast';
+import BossCastTimeLine from './BossCastTimeLine';
 import specResource from './specResource';
+import BuffsTimeLine from './BuffsTimeLine';
+import CastsTimeLine from './CastsTimeLine';
 
 function App() {
   const [inputMyValue, setInputMyValue] = useState('');
@@ -35,17 +37,15 @@ function App() {
   const [otherSourceName, setOtherSourceName] = useState(null);
   const [otherSpec, setOtherSpec] = useState(null);
   const [graphData, setGraphData] = useState(null);
-  const [DTData, setDTData] = useState(null);
+  const [graphFilter, setGraphFilter] = useState({});
   const [otherGraphData, setOtherGraphData] = useState(null);
-  const [otherDTData, setOtherDTData] = useState(null);
+  const [otherGraphFilter, setOtherGraphFilter] = useState({});
   const [error, setError] = useState('');
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [otherStartTime, setOtherStartTime] = useState(null);
   const [otherEndTime, setOtherEndTime] = useState(null);
 
-  const [myGraphJSON, setMyGraphJSON] = useState(null);
-  const [otherGraphJSON, setOtherGraphJSON] = useState(null);
   const [resource, setResource] = useState(null);
   const [otherResource, setOtherResource] = useState(null);
 
@@ -57,8 +57,10 @@ function App() {
 
   const [masterAbilities, setMasterAbilities] = useState(null);
   const [masterNPCs, setMasterNPCs] = useState(null);
+  const [reportLang, setReportLang] = useState(null);
   const [otherMasterAbilities, setOtherMasterAbilities] = useState(null);
   const [otherMasterNPCs, setOtherMasterNPCs] = useState(null);
+  const [otherReportLang, setOtherReportLang] = useState(null);
   const [friendlyNPCs, setFriendlyNPCs] = useState(null);
   const [enemyNPCs, setEnemyNPCs] = useState(null);
   const [otherFriendlyNPCs, setOtherFriendlyNPCs] = useState(null);
@@ -72,12 +74,14 @@ function App() {
   const [castTable, setCastTable] = useState(null);
   const [otherCastTable, setOtherCastTable] = useState(null);
 
-  const [selectedBuff, setSelectedBuff] = useState(null);
-  const [selectedOtherBuff, setSelectedOtherBuff] = useState(null);
-  const [selectedCast, setSelectedCast] = useState(null);
-  const [selectedOtherCast, setSelectedOtherCast] = useState(null);
+  const [castFilter, setCastFilter] = useState({});
+  const [otherCastFilter, setOtherCastFilter] = useState({});
+  const [buffFilter, setBuffFilter] = useState({});
+  const [otherBuffFilter, setOtherBuffFilter] = useState({});
   const [enemyCastTable, setEnemyCastTable] = useState({});
+  const [otherEnemyCastTable, setOtherEnemyCastTable] = useState({});
   const [enemyCastFilter, setEnemyCastFilter] = useState(null);
+  const [otherEnemyCastFilter, setOtherEnemyCastFilter] = useState(null);
   const [selectedResource, setSelectedResource] = useState(null);
   const [selectedOtherResource, setSelectedOtherResource] = useState(null);
 
@@ -113,32 +117,70 @@ function App() {
   }
   }, [name, otherReportID]);
 
-  const getGraphData = (r, f, s, t, ty, sT, eT, gD) => {
-    API.get_graph_data(r, f, s, t, ty, sT, eT).then(data => {
+  const getGraphData = async (r, f, s, t, ty, sT, eT, sN, sG, sF) => {
+    const fetch = async (r, f, s, t, ty, sT, eT) => {
+      const data = await API.get_graph_data(r, f, s, t, ty, sT, eT);
       if (data.errors) {
         console.log('112');
         setError(data.errors[0].message);
         return;
       }
-      gD(data.data.reportData.report.graph.data.series);
-    });
+      return (data.data.reportData.report.graph.data.series);
+    }
+
+    const fetchResult = async (r, f, s, t, ty, sT, eT, sN) => {
+      const graph = await fetch(r, f, s, t, ty, sT, eT);
+      let result = {
+        id: s,
+        name: sN,
+        graph: graph,
+        time: eT - sT
+      }
+      const gf = {};
+      graph.forEach(item => {
+        gf[item.name] = item.name === 'Total' ? true : false;
+      });
+      if (ty === 'Healing'){
+        const dtgraph = await fetch(r, f, 'ALL', 'ALL', 'DamageTaken', sT, eT);
+        result = {...result, DTGraph: dtgraph.find(item => item.id === 'Total')};
+        gf['Damage Taken'] = false;
+      }
+      console.log(gf);
+      return {result, gf};
+    }
+    sG((await fetchResult(r, f, s, t, ty, sT, eT, sN)).result);
+    sF((await fetchResult(r, f, s, t, ty, sT, eT, sN)).gf);
   }
 
   const getTableData = (r, f, s, t, ty,sT, eT, sB, sgB, sC) => {
-    API.get_table_data(r, f, s, t, ty,sT, eT).then(data => {
+    API.get_table_data(r, f, s, t, ty,sT, eT).then(async data => {
       if (data.errors) {
         console.log('123');
         setError(data.errors[0].message);
         return;
       }
-      const sort_sB = data.data.reportData.report.self.data.auras.sort((a,b) => a.guid - b.guid);
-      const sort_sgB = data.data.reportData.report.global.data.auras.sort((a,b) => a.guid - b.guid);
-      const sort_sC = data.data.reportData.report.cast.data.entries.sort((a,b) => a.guid - b.guid);
+      const sort_sB = await addColor(data.data.reportData.report.self.data.auras.sort((a,b) => a.guid - b.guid));
+      const sort_sgB = await addColor(data.data.reportData.report.global.data.auras.sort((a,b) => a.guid - b.guid));
+      const sort_sC = await addColor(data.data.reportData.report.cast.data.entries.sort((a,b) => a.guid - b.guid));
       sB(sort_sB);
       sgB(sort_sgB);
       sC(sort_sC);
     })
   };
+
+  const addColor = async (data) => {
+    const D = {};
+    const promises = Object.values(data).map( async (ability) => {
+      const color = await API.getColorFromImage(`https://wow.zamimg.com/images/wow/icons/large/${ability.abilityIcon}`);
+      D[ability.guid] = {
+        'name': ability.name,
+        'abilityIcon': ability.abilityIcon,
+        'iconColor': color
+      }
+    })
+    await Promise.all(promises);
+    return D;
+  }
 
   const getResourceData = (r, f, s, sp, sT, eT,dt, bT, n, sR) => {
     API.get_resource_data(r, f, s, sp, sT, eT, dt, bT).then(data => {
@@ -167,7 +209,6 @@ function App() {
       }));
     });
   };
-
   
   // Master Data
   useEffect(() => {
@@ -180,6 +221,7 @@ function App() {
         }
         setMasterAbilities(data.data.reportData.report.masterData.abilities)
         setMasterNPCs(data.data.reportData.report.masterData.npc);
+        setReportLang(data.data.reportData.report.lang)
       });
     }
   }, [reportID]);
@@ -195,6 +237,7 @@ function App() {
         }
         setOtherMasterAbilities(data.data.reportData.report.masterData.abilities)
         setOtherMasterNPCs(data.data.reportData.report.masterData.npc);
+        setOtherReportLang(data.data.reportData.report.lang)
       });
     }
   }, [otherReportID]);
@@ -232,28 +275,42 @@ function App() {
     setOtherSourceID(null);
     setOtherTargetID(null);
     setOtherIDDict(null);
+    setOtherEnemyCastTable({});
   }, [otherFight]);
 
   useEffect(() => {
-    setMyGraphJSON(null);
+    setCastFilter({});
+    setCastTable(null);
+    setBuffFilter({});
+    setBuffTable(null);
   }, [sourceID]);
 
   useEffect(() => {
-    setOtherGraphJSON(null);
-  }, [otherSourceID]);
+    setOtherCastFilter({});
+    setOtherCastTable(null);
+    setOtherBuffFilter({});
+    setOtherBuffTable(null);
+  },[otherSourceID]);
   
   // Graph Data
-  useEffect(() => {
-    if (reportID && fight && sourceID && type && startTime && endTime && !notRenderGraph) {
-      getGraphData(reportID, fight, sourceID, targetID, type, startTime, endTime, setGraphData);
-      if (type === 'Healing'){
-        getGraphData(reportID, fight, 'ALL', 'ALL', 'DamageTaken', startTime, endTime, setDTData);
-      }
+  useEffect(() => {    
+    if (reportID && fight && sourceID && targetID && type && startTime && endTime && !notRenderGraph){
+      getGraphData(reportID, fight, sourceID, targetID, type, startTime, endTime, sourceName, setGraphData, setGraphFilter);
     }
     else{
       setGraphData(null);
     }
   }, [startTime, endTime, sourceID, targetID, notRenderGraph, type]);
+
+  // Other Graph Data
+  useEffect(() => {
+    if (otherReportID && otherFight && otherSourceID && otherTargetID && otherStartTime && otherEndTime && !notRenderGraph){
+      getGraphData(otherReportID, otherFight, otherSourceID, otherTargetID, type, otherStartTime, otherEndTime, otherSourceName, setOtherGraphData, setOtherGraphFilter);
+    }
+    else{
+      setOtherGraphData(null);
+    }
+  }, [otherStartTime, otherEndTime, otherSourceID, otherTargetID, notRenderGraph, type]);
 
   // Resource Data
   useEffect(() => {
@@ -267,20 +324,6 @@ function App() {
       });
     }
   }, [sourceID, startTime, endTime, spec]);
-
-  // Other Graph Data
-  useEffect(() => {
-    if (otherReportID && otherFight && otherSourceID && otherTargetID && type && otherStartTime && otherEndTime && !notRenderGraph) {
-      getGraphData(otherReportID, otherFight, otherSourceID, otherTargetID, type, otherStartTime, otherEndTime, setOtherGraphData);
-      if(type === 'Healing'){
-        getGraphData(otherReportID, otherFight, 'ALL', 'ALL', 'DamageTaken', otherStartTime, otherEndTime, setOtherDTData);
-      }
-    }
-    else{
-      setOtherGraphData(null);
-    }
-  }, [otherSourceID, otherTargetID, otherStartTime, otherEndTime, notRenderGraph, type]);
-
   // Resource Data
   useEffect(() => {
     if (otherReportID && otherFight && otherSourceID && otherStartTime && otherEndTime && otherSpec) {
@@ -293,49 +336,6 @@ function App() {
       });
     }
   }, [otherSourceID, otherStartTime, otherEndTime, otherSpec]);
-
-  // Set Graph Data
-  useEffect(() => {
-    if (graphData) {
-      setMyGraphJSON({
-        id : sourceID,
-        name: sourceName,
-        graph: graphData,
-        time: endTime - startTime
-      });
-    }
-  }, [graphData]);
-
-  // Set Damage Taken Data
-  useEffect(() => {
-    if (DTData) {
-      setMyGraphJSON(prev => ({
-        ...prev,
-        DTGraph: DTData.find(item => item.id === 'Total')
-      }));
-    }
-  },[DTData]);
-
-  // Set Other Graph Data
-  useEffect(() => {
-    if (otherGraphData) {
-      setOtherGraphJSON({
-        name: otherSourceName,
-        graph: otherGraphData,
-        time: otherEndTime - otherStartTime
-      });
-    }
-  }, [otherGraphData])
-
-  // Set Other Damage Taken Data
-  useEffect(() => {
-    if (otherDTData) {
-      setOtherGraphJSON(prev => ({
-        ...prev,
-        DTGraph: otherDTData.find(item => item.id === 'Total')
-      }));
-    }
-  },[otherDTData]);
 
   //set Time Length
   useEffect(() => {
@@ -370,7 +370,7 @@ function App() {
         setFriendlyNPCs(data.data.reportData.report.fights[0].friendlyNPCs);
       })
     }
-  }, [fight, startTime, endTime]);
+  }, [startTime, endTime]);
 
   // Get Other NPC data
   useEffect(() => {
@@ -392,7 +392,7 @@ function App() {
         setOtherFriendlyNPCs(data.data.reportData.report.fights[0].friendlyNPCs);
       })
     }
-  }, [otherFight, otherStartTime, otherEndTime]);
+  }, [otherStartTime, otherEndTime]);
 
   // Get Table Data
   useEffect(() => {
@@ -414,16 +414,14 @@ function App() {
     else {
       setOtherBuffTable(null);
       setOtherGlobalBuffTable(null);
-      setOtherCastTable(null);
+      setOtherCastTable({});
     }
   }, [otherStartTime, otherEndTime, otherSourceID, type]);
 
   useEffect(() => {
-    if(IDDict && otherIDDict){
-      console.log(IDDict);
-      console.log(otherIDDict);
-    }
-  },[IDDict, otherIDDict]);
+    console.log('tbfZN6Jxjycq9D8v');
+    console.log('JAjWZM1xHPyVd8g9');
+  }, []);
 
   return (
     <div className="App">
@@ -469,29 +467,46 @@ function App() {
         </div>
       </div>
       <div style= {{overflowX: 'auto', margin: 6}}>
-        {myGraphJSON && (
-          <ChartComponent myGraphJSON={myGraphJSON} otherGraphJSON={otherGraphJSON} type={type} 
+        {graphData && (
+          <ChartComponent gd={graphData} ogd={otherGraphData} type={type} gf ={graphFilter} ogf = {otherGraphFilter} sgf = {setGraphFilter} sogf = {setOtherGraphFilter}
           timeLength= {timeLength} abilityTable={masterAbilities} otherAbilityTable={otherMasterAbilities}/>
         )}
         {sourceID && enemyNPCs && (
-          <Checkboxdown reportID = {reportID} fight={fight} sourceID={sourceID} sourceName={sourceName} enemyNPCs ={enemyNPCs} buff={buffTable} 
-          globalBuff = {globalBuffTable} masterNPCs={masterNPCs} cast ={castTable}
-          otherReportID = {otherReportID} otherFight = {otherFight} otherSourceID = {otherSourceID} otherSourceName = {otherSourceName}
-          otherBuff = {otherBuffTable} otherGlobalBuff = {otherGlobalBuffTable} otherCast = {otherCastTable} resource = {resource} otherResource = {otherResource}
-          setSelectedBuff={setSelectedBuff} setSelectedCast={setSelectedCast}
-          setSelectedOtherBuff = {setSelectedOtherBuff} setSelectedOtherCast = {setSelectedOtherCast} setEnemyCastTable = {setEnemyCastTable} SetEnemyCastFilter = {setEnemyCastFilter}
-          setSelectedResource = {setSelectedResource} setSelectedOtherResource = {setSelectedOtherResource} startTime={startTime} endTime={endTime}/>
+          <Checkboxdown reportID = {reportID} fight={fight} sourceID={sourceID} sourceName={sourceName} enemyNPCs ={enemyNPCs} 
+          buff={buffTable} globalBuff = {globalBuffTable} masterNPCs={masterNPCs} cast ={castTable}
+          otherReportID = {otherReportID} otherFight = {otherFight} otherSourceID = {otherSourceID} otherSourceName = {otherSourceName} otherEnemyNPCs={otherEnemyNPCs}
+          otherBuff = {otherBuffTable} otherGlobalBuff = {otherGlobalBuffTable} otherCast = {otherCastTable}
+          cf = {castFilter} scf = {setCastFilter} ocf = {otherCastFilter} socf={setOtherCastFilter}
+          bf={buffFilter}  sbf = {setBuffFilter} obf = {setOtherBuffFilter} sobf = {setOtherBuffFilter}
+          setEnemyCastTable = {setEnemyCastTable} SetEnemyCastFilter = {setEnemyCastFilter} setOtherEnemyCastTable = {setOtherEnemyCastTable} SetOtherEnemyCastFilter = {setOtherEnemyCastFilter}
+          startTime={startTime} endTime={endTime}/>
         )}
         {timeLength && chartInterval && chartLeft && sourceID && (
           <Scaling timeLength={timeLength} chartInterval={chartInterval} chartLeft={chartLeft} chartWidth = {chartWidth}/>
         )}
         {chartLeft && sourceID && IDDict && (Object.keys(enemyCastTable).length > 0)  && (
-          <BossCast reportID = {reportID} fight ={fight} startTime = {startTime} endTime = {endTime} enemyCastTable ={enemyCastTable} enemyCastFilter = {enemyCastFilter}
+          <BossCastTimeLine reportID = {reportID} fight ={fight} startTime = {startTime} endTime = {endTime} enemyCastTable ={enemyCastTable} enemyCastFilter = {enemyCastFilter}
           chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={IDDict}/>
         )}
-        {chartLeft && otherSourceID && otherIDDict && enemyCastTable && (
-          <BossCast reportID = {otherReportID} fight ={otherFight} startTime = {otherStartTime} endTime = {otherEndTime} enemyCastTable={enemyCastTable} enemyCastFilter = {enemyCastFilter}
+        {chartLeft && otherSourceID && otherIDDict && (Object.keys(otherEnemyCastTable).length > 0) && (
+          <BossCastTimeLine reportID = {otherReportID} fight ={otherFight} startTime = {otherStartTime} endTime = {otherEndTime} enemyCastTable={otherEnemyCastTable} enemyCastFilter = {otherEnemyCastFilter}
           chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={otherIDDict}/>
+        )}
+        {chartLeft && sourceID && IDDict && buffFilter && globalBuffTable && (Object.keys(buffFilter).length > 0) &&(
+          <BuffsTimeLine reportID = {reportID} fight ={fight} startTime = {startTime} endTime = {endTime} table ={globalBuffTable} filter = {buffFilter} sourceID = {sourceID}
+          chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={IDDict}/>
+        )}
+        {chartLeft && sourceID && IDDict && otherBuffFilter && otherGlobalBuffTable && (Object.keys(buffFilter).length > 0) &&(
+          <BuffsTimeLine reportID = {otherReportID} fight ={otherFight} startTime = {otherStartTime} endTime = {otherEndTime} table ={otherGlobalBuffTable} filter = {otherBuffFilter} sourceID = {otherSourceID}
+          chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={otherIDDict}/>
+        )}
+        {chartLeft && sourceID && IDDict && castTable && (Object.keys(castFilter).length > 0) && (
+          <CastsTimeLine reportID = {reportID} fight ={fight} startTime = {startTime} endTime = {endTime} table ={castTable} filter = {castFilter} sourceID = {sourceID}
+          chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={IDDict}/>
+        )}
+        {chartLeft && otherSourceID && otherIDDict && otherCastTable&&(Object.keys(otherCastFilter).length > 0) && (
+          <CastsTimeLine reportID = {otherReportID} fight ={otherFight} startTime = {otherStartTime} endTime = {otherEndTime} table ={otherCastTable} filter = {otherCastFilter}
+          sourceID = {otherSourceID} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={otherIDDict}/>
         )}
       </div>
     </div>

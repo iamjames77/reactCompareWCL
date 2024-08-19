@@ -104,6 +104,23 @@ def get_hostility_event_data():
     response = get_api_data(get_hostility_event_query, code=report, fight= fight, sourceID=source, startTime= startTime, endTime = endTime)
     return jsonify(response)
 
+@app.route('/get_buffs_event_data', methods=['POST'])
+def get_buffs_event_data():
+    data = request.get_json()
+    report, fight, source, abilityID, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), float(data.get('abilityID')), float(data.get('startTime')), float(data.get('endTime'))
+    print(report, fight, source, abilityID, startTime, endTime)
+    response = get_api_data(get_buffs_event_query, code=report, abilityID= abilityID,fight= fight, startTime= startTime, endTime = endTime)
+    filter_response = {'data': [data for data in response['data']['reportData']['report']['events']['data'] if data['targetID'] == source], 'nextPagetTimestamp': response['data']['reportData']['report']['events']['nextPageTimestamp']}
+    print(filter_response)
+    return jsonify(filter_response)
+
+@app.route('/get_casts_event_data', methods=['POST'])
+def get_casts_event_data():
+    data = request.get_json()
+    report, fight, source, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), float(data.get('startTime')), float(data.get('endTime'))
+    response = get_api_data(get_casts_event_query, code=report, fight= fight, sourceID=source, startTime= startTime, endTime = endTime)
+    return jsonify(response)
+
 @app.route('/get_resource_data', methods=['POST'])
 def get_resource_data():
     data = request.get_json()

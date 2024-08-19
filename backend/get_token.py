@@ -165,6 +165,7 @@ master_query = """query($code: String){
                                 name
                                 subType
                             }
+                            lang
                         }
                     }
                 }
@@ -193,6 +194,28 @@ get_hostility_event_query = """query($code: String, $fight: Int, $sourceID: Int,
                 reportData{
                     report(code: $code){
                         events(fightIDs: [$fight], dataType: Casts, hostilityType: Enemies, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false){
+                            data,
+                            nextPageTimestamp
+                        }
+                    }
+                }
+            }"""
+
+get_buffs_event_query = """query($code: String, $abilityID: Float, $fight: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        events(fightIDs: [$fight], abilityID: $abilityID, dataType: Buffs, startTime: $startTime, endTime: $endTime, translate: false){
+                            data,
+                            nextPageTimestamp
+                        }
+                    }
+                }
+            }"""
+
+get_casts_event_query = """query($code: String, $fight: Int, $sourceID: Int, $startTime: Float, $endTime: Float){
+                reportData{
+                    report(code: $code){
+                        events(fightIDs: [$fight], dataType: Casts, sourceID: $sourceID, startTime: $startTime, endTime: $endTime, translate: false){
                             data,
                             nextPageTimestamp
                         }

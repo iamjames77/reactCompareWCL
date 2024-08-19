@@ -1,3 +1,5 @@
+import ColorThief from 'colorthief';
+
 export function get_fight_options(reportID) {
     return fetch('/get_fight_data', {
       method: 'POST',
@@ -205,6 +207,54 @@ export function get_hostility_event_data(reportID, fight, source, startTime, end
     .catch(err => console.error('Error fetching data'));
 }
 
+export function get_buffs_event_data(reportID, fight, source, abilityID, startTime, endTime){
+  return fetch('/get_buffs_event_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reportID, fight, source, abilityID, startTime, endTime}),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
+}
+
+export function get_casts_event_data(reportID, fight, source, startTime, endTime){
+  return fetch('/get_casts_event_data', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reportID, fight, source, startTime, endTime }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
+}
+
+export function get_spell_info(abilityID){
+  return fetch('/get_spell_info', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ abilityID }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      return data;
+    }
+    )
+    .catch(err => console.error('Error fetching data'));
+}
+
 export function get_resource_data(reportID, fight, source, abilityID, startTime, endTime, type, byTarget){
   return fetch('/get_resource_data', {
     method: 'POST',
@@ -220,3 +270,19 @@ export function get_resource_data(reportID, fight, source, abilityID, startTime,
     )
     .catch(err => console.error('Error fetching data'));
 }
+
+export const getColorFromImage = async (imageSrc) => {
+  return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = imageSrc;
+      img.onload = () => {
+          const colorThief = new ColorThief();
+          const color = colorThief.getColor(img);
+          resolve(color);
+      };
+      img.onerror = () => {
+          resolve([0, 0, 0]); // 오류 발생 시 기본 색상
+      };
+  });
+};

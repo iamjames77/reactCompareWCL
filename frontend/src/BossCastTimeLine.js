@@ -3,7 +3,7 @@ import { get_hostility_event_data } from './get_api_data';
 import './castBar.css';
 import RenderIcon from './RenderIcon';
 
-function BossCast({reportID, fight, startTime, endTime, SetError, enemyCastTable, enemyCastFilter, chartLeft, chartInterval, chartRight, chartWidth, IDDict}) {
+function BossCastTimeLine({reportID, fight, startTime, endTime, SetError, enemyCastTable, enemyCastFilter, chartLeft, chartInterval, chartRight, chartWidth, IDDict}) {
     const [enemyCast, setEnemyCast] = useState({});
 
     const getHostilityEventData = async (id, nT) => {
@@ -28,12 +28,6 @@ function BossCast({reportID, fight, startTime, endTime, SetError, enemyCastTable
     };
 
     useEffect(() => {
-        if(enemyCastFilter){
-            console.log(enemyCastFilter);
-        }
-    }   ,[enemyCastFilter]);
-
-    useEffect(() => {
         const getEventData = async () => {
             const events = {};
             if(enemyCastTable){
@@ -53,39 +47,33 @@ function BossCast({reportID, fight, startTime, endTime, SetError, enemyCastTable
                 };
                 await fetchEventData(enemyCastTable);
                 setEnemyCast(events);
-                console.log(events);
             }
         };
         getEventData();
     },[enemyCastTable]);
 
-    useEffect(() => {
-        console.log(enemyCast);
-        if(Object.getOwnPropertyNames(enemyCast).length > 0){
-            console.log(enemyCast);
-        }
-    },[enemyCast]);
-
     return (
         <div>
             {
             (Object.getOwnPropertyNames(enemyCast).length > 0) && Object.entries(enemyCast).map(([id, enemy]) => (
+                enemyCastFilter[id] && (
                 <RenderIcon 
-                    key={id}
                     sc={enemy} 
                     scf={enemyCastFilter[id]} 
-                    sID={id}
+                    Name={IDDict[id]}
                     chartWidth={chartWidth} 
                     chartLeft={chartLeft} 
                     chartRight={chartRight} 
                     chartInterval={chartInterval} 
-                    startTime={startTime} 
+                    startTime={startTime}
+                    endTime={endTime}
                     IDDict={IDDict}
                 />
+                )
             ))
             }
         </div>
     );
 }
 
-export default BossCast;
+export default BossCastTimeLine;

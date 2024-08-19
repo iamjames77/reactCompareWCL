@@ -1,23 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { get_hostility_table_data } from './get_api_data';
+import { get_hostility_table_data, getColorFromImage } from './get_api_data';
 import './dropdown.css';
-import ColorThief from 'colorthief';
 
-function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, masterNPCs, enemyNPCs, 
-    buff, globalBuff, cast, otherBuff, otherGlobalBuff, otherCast,
-    setSelectedEnemy, setSelectedBuff, setSelectedOtherBuff,setSelectedCast, setSelectedOtherCast, setEnemyCastTable, SetEnemyCastFilter,
-    startTime,endTime
+function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, masterNPCs, enemyNPCs, otherEnemyNPCs,buff, globalBuff, 
+    cast, otherBuff, otherGlobalBuff, otherCast,
+    cf, scf, ocf, socf, bf, sbf, obf, sobf,
+    setEnemyCastTable, setOtherEnemyCastTable, SetEnemyCastFilter, SetOtherEnemyCastFilter, startTime, endTime
 }) {
     const [openDropdown, setOpenDropdown] = useState(null);
     const [externalBuff, setExternalBuff] = useState({});
     const [otherExternalBuff, setOtherExternalBuff] = useState({});
-    const [buffFilter, setBuffFilter] = useState({});
-    const [playerCastFilter, setPlayerCastFilter] = useState({});
-    const [otherPlayerCastFilter, setOtherPlayerCastFilter] = useState({});
-    const [castFilter, setCastFilter] = useState({});
-    
-    const [castTable, setCastTable] = useState(null);
-    const [otherCastTable, setOtherCastTable] = useState(null);
 
     const [enemyCastFilter, setEnemyCastFilter] = useState({});
     const [enemyCast, setEnemyCast] = useState({});
@@ -27,12 +19,16 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         setOpenDropdown(openDropdown === dropdown ? null : dropdown);
     };
 
-    const handleCheckboxChange = (event, setCheckedItems) => {
+    const handleCheckboxChange = (event, setCheckedItems, setOtherCheckedItems) => {
         const checkbox  = event.target;
         const isChecked = checkbox.checked;
-        const itemID = checkbox.id;
+        const itemID = Number(checkbox.id);
 
         setCheckedItems(prevState => ({
+            ...prevState,
+            [itemID]: isChecked,
+        }));
+        setOtherCheckedItems(prevState => ({
             ...prevState,
             [itemID]: isChecked,
         }));
@@ -85,40 +81,6 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         return result;
     };
 
-    const buffRenderCheckboxItems = (items) => {
-        const result = items.map((item, index) => {
-            return (
-                <div key={index} className="checkbox-item">
-                    <input type="checkbox" id={item.guid} name={item.name}
-                    checked = {buffFilter[item.guid] || false}
-                    onChange={(e)=> handleCheckboxChange(e, setBuffFilter)}/>
-                    <a href ={'https://www.wowhead.com/spell=' + item.guid} target="_blank" rel="noreferrer">
-                        <img src={`https://wow.zamimg.com/images/wow/icons/large/${item.abilityIcon}`} alt="" className="dropdown-icon"/>
-                    </a>
-                    <label htmlFor={item}>{item.name}</label>
-                </div>
-            );
-        });
-        return result
-    };
-
-    const castRenderCheckboxItems = (items) => {
-        const result = items.map((item, index) => {
-            return (
-                <div key={index} className="checkbox-item">
-                    <input type="checkbox" id={item.guid} name={item.name}
-                    checked = {item['visibility'] || false}
-                    onChange={(e)=> handleCheckboxChange(e, setCastFilter)}/>
-                    <a href ={'https://www.wowhead.com/spell=' + item.guid} target="_blank" rel="noreferrer">
-                        <img src={`https://wow.zamimg.com/images/wow/icons/large/${item.abilityIcon}`} alt="" className="dropdown-icon"/>
-                    </a>
-                    <label htmlFor={item}>{item.name}</label>
-                </div>
-            );
-        });
-        return result
-    };
-
     const enemyCastRender = (enemyCast, gameID) => {
         const result = Object.entries(enemyCast).map(([index, item]) => {
             return (
@@ -136,73 +98,39 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         return result;
     };
 
-    const getColorFromImage = async (imageSrc) => {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            img.src = imageSrc;
-            img.onload = () => {
-                const colorThief = new ColorThief();
-                const color = colorThief.getColor(img);
-                resolve(color);
-            };
-            img.onerror = () => {
-                resolve([0, 0, 0]); // 오류 발생 시 기본 색상
-            };
+    const buffRenderCheckboxItems = (items, bF) => {
+        const result = Object.entries(items).map(([index, item]) => {
+            return (
+                <div key={index} className="checkbox-item">
+                    <input type="checkbox" id={index}
+                    checked = {bF[index] || false}
+                    onChange={(e)=> handleCheckboxChange(e, sbf, sobf)}/>
+                    <a href ={'https://www.wowhead.com/spell=' + index} target="_blank" rel="noreferrer">
+                        <img src={`https://wow.zamimg.com/images/wow/icons/large/${item.abilityIcon}`} alt="" className="dropdown-icon"/>
+                    </a>
+                    <label htmlFor={item}>{item.name}</label>
+                </div>
+            );
         });
+        return result
     };
 
-    //선택된 Buff 정보를 가져옴
-    useEffect(() => {
-        if(buffFilter && globalBuff) {
-            const result = {};
-            globalBuff.forEach((aura) => {
-                if(buffFilter[aura.guid]) {
-                    result[aura.guid] = {'name': aura.name, 'abilityIcon': aura.abilityIcon};
-                }
-            })
-            setSelectedBuff(result);
-        }
-        if(buffFilter && otherGlobalBuff) {
-            const result = {};
-            otherGlobalBuff.forEach((aura) => {
-                if(buffFilter[aura.guid]) {
-                    result[aura.guid] = {'name': aura.name, 'abilityIcon': aura.abilityIcon};
-                }
-            })
-            setSelectedOtherBuff(result);
-        }
-    }, [buffFilter]);
-
-    //선택된 Cast 정보를 가져옴
-    useEffect(() => {
-        if(castFilter && cast) {
-            const result = {};
-            cast.forEach((ability) => {
-                const iconColor = 'black';
-                result[ability.guid] = {
-                    'name': ability.name, 
-                    'abilityIcon': ability.abilityIcon,
-                    'iconColor': iconColor,
-                    'visibility': castFilter[ability.guid] ? true : false
-                };
-            })
-            setSelectedCast(result);
-        }
-        if(castFilter && otherCast) {
-            const result = {};
-            otherCast.forEach((ability) => {
-                const iconColor = 'black';
-                result[ability.guid] = {
-                    'name': ability.name, 
-                    'abilityIcon': ability.abilityIcon,
-                    'iconColor': iconColor,
-                    'visibility': castFilter[ability.guid] ? true : false
-                };
-            })
-            setSelectedOtherCast(result);
-        }
-    }, [castFilter]);
+    const castRenderCheckboxItems = (items, cF) => {
+        const result = Object.entries(items).map(([index, item]) => {
+            return (
+                <div key={index} className="checkbox-item">
+                    <input type="checkbox" id={index}
+                    checked = {cF[Number(index)] || false}
+                    onChange={(e)=> handleCheckboxChange(e, scf, socf)}/>
+                    <a href ={'https://www.wowhead.com/spell=' + index} target="_blank" rel="noreferrer">
+                        <img src={`https://wow.zamimg.com/images/wow/icons/large/${item.abilityIcon}`} alt="" className="dropdown-icon"/>
+                    </a>
+                    <label htmlFor={item}>{item.name}</label>
+                </div>
+            );
+        });
+        return result
+    };
 
    //BOSS 타입인 경우 Check
     useEffect(() => {
@@ -218,7 +146,6 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                         const cD = {};
                         Object.values(castData).forEach(async (ability) => {
                             const color = await getColorFromImage(`https://wow.zamimg.com/images/wow/icons/large/${ability.abilityIcon}`);
-                            console.log(color);
                             cD[ability.guid] = {
                                 'name': ability.name,
                                 'abilityIcon': ability.abilityIcon,
@@ -256,8 +183,9 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         fetchEnemyTable();
     }, [enemyNPCs, masterNPCs]);
 
+    //enemy Cast table 적용
     useEffect(() => {
-        if(enemyCast) {
+        if((Object.keys(enemyCast).length >0)) {
             const ec = {};
             enemyNPCs.forEach((enemy) => {
                 if(enemyCast[enemy.gameID] && enemyCast[enemy.gameID].visibility) {
@@ -268,6 +196,20 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         }
     }, [enemyCast]);
 
+    //otherEnemy Cast table 적용
+    useEffect(() => {
+        if((Object.keys(enemyCast).length >0) && otherEnemyNPCs){
+            const oec = {};
+            otherEnemyNPCs.forEach((enemy) => {
+                if(enemyCast[enemy.gameID] && enemyCast[enemy.gameID].visibility) {
+                    oec[enemy.id] = enemyCast[enemy.gameID];
+                }
+            });
+            setOtherEnemyCastTable(oec);
+        }
+    }, [enemyCast, otherEnemyNPCs]);
+
+    //enemy Cast Filter 적용
     useEffect(() => {
         if(enemyCastFilter) {
             const ecf = {};
@@ -280,15 +222,29 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         }
     }, [enemyCastFilter]);
 
+    //otherEnemy Cast Filter 적용
+    useEffect(() => {
+        if(enemyCastFilter && otherEnemyNPCs){
+            const oecf = {};
+            otherEnemyNPCs.forEach((enemy) => {
+                if(enemyCastFilter[enemy.gameID]) {
+                    oecf[enemy.id] = enemyCastFilter[enemy.gameID];
+                }
+            });
+            SetOtherEnemyCastFilter(oecf);
+        }
+    }, [enemyCastFilter, otherEnemyNPCs]);
+
     //Global Buff 정보를 가져옴
     useEffect( () => {
         if(buff && globalBuff) {
-            const result = globalBuff.map((aura) => {
-                const findBuff = buff.find((buff) => buff.guid === aura.guid);
+            const result = {}
+            Object.entries(globalBuff).forEach(([index, aura]) => {
+                const findBuff = Object.entries(buff).find(([idx, ar]) => idx === index);
                 if (!findBuff) {
-                    return aura;
+                    result[index] = aura;
                 }
-            }).filter((aura) => aura !== undefined);
+            });
             setExternalBuff(result);
         }
     }, [buff, globalBuff]) 
@@ -296,8 +252,8 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
     //otherGlobalBuff 정보를 가져옴
     useEffect( () => {
         if(otherBuff && otherGlobalBuff) {
-            const result = otherGlobalBuff.map((aura) => {
-                const findBuff = otherBuff.find((buff) => buff.guid === aura.guid);
+            const result = Object.entries(otherGlobalBuff).map(([index, aura]) => {
+                const findBuff = Object.entries(otherBuff).find(([idx, ar]) => idx === index);
                 if (!findBuff) {
                     return aura;
                 }
@@ -306,61 +262,31 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         }
     }, [otherBuff, otherGlobalBuff])
 
+    useEffect(() => {
+        console.log(externalBuff);
+    }, [externalBuff]);
     
     //cast checkbox 초기화
     useEffect(() => {
         if(cast) {
-            const initialCast = {};
-            cast.forEach((ability) => {
-                initialCast[ability.guid] = true;
-            });
-            setPlayerCastFilter(initialCast);
+        const initialCast = {};
+        Object.entries(cast).forEach(([index, value]) => {
+            initialCast[Number(index)] = true;
+        });
+        scf(initialCast);
         }
     },[cast]);
-
-    useEffect(() => {
-        if(cast){
-            const cs = {};
-            cast.forEach((ability) => {
-                cs[ability.guid] = {
-                    'name': ability.name,
-                    'abilityIcon': ability.abilityIcon,
-                    'visibility': true
-                }
-            })
-            setCastTable(cs);
-        }
-    }, [cast])
 
     //otherCast checkbox 초기화
     useEffect(() => {
         if(otherCast) {
             const initialCast = {};
-            otherCast.forEach((ability) => {
-                initialCast[ability.guid] = true;
+            Object.entries(otherCast).forEach(([index, value]) => {
+                initialCast[index] = true;
             });
-            setOtherPlayerCastFilter(initialCast);
+            socf(initialCast);
         }
     },[otherCast]);
-
-    useEffect(() => {
-        if(otherCast){
-            const ocs ={};
-            otherCast.forEach((ability) => {
-                ocs[ability.guid] = {
-                    'name': ability.name,
-                    'abilityIcon': ability.abilityIcon,
-                    'visibility': true
-                }
-            })
-            setOtherCastTable(ocs);
-        }
-    }, [otherCast])
-
-    //castFilter 업데이트
-    useEffect(() => {
-        setCastFilter({...playerCastFilter, ...otherPlayerCastFilter});
-    }, [playerCastFilter, otherPlayerCastFilter]);
 
     return (
         <div style={{position:'sticky', left:0}}>
@@ -410,14 +336,14 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                     <div className="checkbox-text">
                         {sourceName} Buff
                     </div>
-                    {buffRenderCheckboxItems(buff)}
+                    {buffRenderCheckboxItems(buff, bf)}
                     </>
                     {otherBuff && (
                         <>
                         <div className="checkbox-text">
                             {otherSourceName} Buff
                         </div>
-                        {buffRenderCheckboxItems(otherBuff)}
+                        {buffRenderCheckboxItems(otherBuff, obf)}
                         </>
                     )}
                 </div>
@@ -429,14 +355,14 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                     <div className="checkbox-text">
                         {sourceName} External Buff
                     </div>
-                    {buffRenderCheckboxItems(externalBuff)}
+                    {buffRenderCheckboxItems(externalBuff, bf)}
                     </>
                     {otherGlobalBuff && (
                         <>
                         <div className="checkbox-text">
                             {otherSourceName} External Buff
                         </div>
-                        {buffRenderCheckboxItems(otherExternalBuff)}
+                        {buffRenderCheckboxItems(otherExternalBuff, obf)}
                         </>
                     )}
                 </div>
@@ -458,20 +384,20 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                             )
                         }
                     })}
-                    {cast && (
+                    {cast && cf && (
                     <>
                        <div className="checkbox-text">
                             {sourceName} Cast
                         </div>
-                        {castRenderCheckboxItems(cast)}
+                        {castRenderCheckboxItems(cast, cf)}
                     </> 
                     )}
-                    {otherCast && (
+                    {otherSourceName && (
                     <>
                         <div className="checkbox-text">
                             {otherSourceName} Cast
                         </div>
-                        {castRenderCheckboxItems(otherCast)}
+                        {castRenderCheckboxItems(otherCast, ocf)}
                     </>
                     )}
                 </div>

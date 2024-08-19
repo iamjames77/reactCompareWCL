@@ -18,6 +18,11 @@
 .bar-img {
     width: 30px;
     height: 30px;
+    border: 2px solid black;
+}
+
+.bar-img.failed {
+    border: 2px solid red;
 }
 
 .tooltip-text {
@@ -48,9 +53,26 @@
 }
 
 a{
-    height: 30px;
+    height: 34px;
 }
 
 .timeline-bar:hover .tooltip-text {
     visibility: visible;
 }
+
+.timeline-bar.hidden {
+    visibility: hidden;
+}
+
+.stack {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 5px;
+    font-size: 10px;
+    line-height: 1;
+    transform: translate(50%, 50%);
+  }

@@ -3,20 +3,14 @@ import Highcharts, { time } from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import './dropdown.css';
 
-function ChartComponent({myGraphJSON, otherGraphJSON, type, timeLength, abilityTable, otherAbilityTable}) {
-    const [myGraphData, setMyGraphData] = useState(null);
-    const [otherGraphData, setOtherGraphData] = useState(null);
+function ChartComponent({gd, ogd, type, timeLength, abilityTable, otherAbilityTable, gf, ogf, sgf, sogf}) {
     const [graph, setGraph] = useState({});
     const [otherGraph, setOtherGraph] = useState({});
-    const [graphData, setGraphData] = useState(null);
-    const [dataType, setDataType] = useState(null);
     const [chart, setChart] = useState(null);
     const [graphStyle, setGraphStyle] = useState(null);
-    const [isOpen, setIsOpen] = useState(false);
-    const [chartSeries, setChartSeries] = useState(null);
-    const [otherChartSeries, setOtherChartSeries] = useState(null);
-    const [componentSeries, setComponentSeries] = useState({});
-    const [otherComponentSeries, setOtherComponentSeries] = useState({});
+    const [isOpen, setIsOpen] = useState(null);
+    const [imageDict, setImageDict] = useState({});
+    const [otherImageDict, setOtherImageDict] = useState({});
     const [expanded, setExpanded] = useState(true);
 
     // Helper functions
@@ -48,27 +42,56 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, timeLength, abilityT
         setIsOpen(isOpen === t ? null : t);
     };
 
-    const toggleSeriesVisibility = (name, scS) => {
-        scS(prev => ({
-            ...prev,
-            [name]: {
-                ...prev[name],
-                visible: !prev[name].visible
-            }
-        }));
+    const toggleSeriesVisibility = (name, gf,sgf) => {
+        sgf({...gf, [name]: !gf[name]});
     };
 
-    const renderTableItems = (items, cS, scS) => {
-        const result = items.map((item, index) => {
+    const setSeries = (gd, sG, at, sid, gf, Name) => {
+        const cs = {};
+        const series = Object.entries(gd.graph).map(([key, data]) => {
+            let img;
+            if (gd.id !== 'ALL'){
+                const find = at.find(ability => ability.gameID === data.guid);
+                if(find){
+                    img = `https://wow.zamimg.com/images/wow/icons/large/${find['icon']}`;
+                }
+                else {
+                    img = undefined;
+                }
+            }
+            else{
+                img = gd.name[data.name];
+            }
+            cs[key] = {name: data.name, img: img, id: data.guid};
+            return {
+                name: `${Name} ${data.name}`,
+                data: data.data.map((value, index) => [index * data.pointInterval, value]),
+                visible: gf[data.name]
+            }
+        });
+        if(gd.DTGraph && (type === 'Healing')){
+            series.push({
+                name: `${Name} Damage Taken`,
+                data: gd.DTGraph.data.map((value, index) => [index * gd.DTGraph.pointInterval, value]),
+                visible: gf['Damage Taken']
+            });
+            cs[series.length - 1] = {name: 'Damage Taken', img: undefined, id: undefined};
+        }
+        sid(cs);
+        sG(series);
+    };
+
+    const renderTableItems = (imgDict, gf, sgf) => {
+        const result = Object.entries(imgDict).map(([index, item]) => {
             return (
                 <div key={index} className="checkbox-item">
-                    <input type="checkbox" id={item.name} name={item.name}
-                    checked = {cS[item.name].visible}
-                    onChange={()=> toggleSeriesVisibility(item.name, scS)}/>
+                    <input type="checkbox" id={index} name={item.name}
+                    checked = {gf[item.name]}
+                    onChange={()=> toggleSeriesVisibility(item.name, gf, sgf)}/>
                     <a href={item.id ? 'https://www.wowhead.com/spell=' + item.id : '#'} target={item.id ? "_blank" : "_self"}  rel="noreferrer">
                         <img src={item.img} alt="" className="dropdown-icon"/>
                     </a>
-                    <label htmlFor={item}>{item.name}</label>
+                    <label htmlFor={index}>{item.name}</label>
                 </div>
             );
         });
@@ -77,188 +100,20 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, timeLength, abilityT
 
     // Load data initially
     useEffect(() => {
-        if (myGraphJSON && (myGraphJSON.id === 'ALL' || abilityTable)) {
-            const id = myGraphJSON.id;
-            const name = myGraphJSON.name;
-            const graph = myGraphJSON.graph;
-            const DTGraph = myGraphJSON.DTGraph;
-            setGraph(prev => ({
-                ...prev,
-                ['id']: id,
-                ['name']: name,
-                ['graph']: graph,
-                ['DTGraph']: DTGraph
-            }));
-            const newComponentSeries = {};
-            Object.entries(graph).forEach(([key, data]) => {
-                let img;
-                if(id !== 'ALL'){
-                    const find = abilityTable.find(ability => ability.gameID === data.guid)
-                    if(find){
-                        img = `https://wow.zamimg.com/images/wow/icons/large/${find['icon']}`
-                    }
-                    else {
-                        img = undefined;
-                    }
-                } else{
-                    img = name[data.name];
-                }
-                newComponentSeries[data.name] = {
-                    visible: data.id === 'Total' ? true : false,
-                    img: img,
-                };
-            });
-            setComponentSeries(prev => ({
-                ...prev,
-                ...newComponentSeries,
-                ['Damage Taken']: {'visible': false, 'img': undefined}
-            }));
-            setDataType(type);
+        if (gd && (Object.keys(gf).length > 0) && (gd.id === 'ALL' || abilityTable)) {
+            setSeries(gd, setGraph, abilityTable, setImageDict, gf, (gd.id === 'ALL' ? 'My' : gd.name));
         }
-    }, [myGraphJSON, abilityTable]);
+    }, [gd, abilityTable, gf]);
 
     useEffect(() => {
-        let isEmpty = true;
-        for (let key in graph) {
-            if (graph.hasOwnProperty(key)) {
-                isEmpty = false;
-                break; // 첫 번째 키를 찾은 즉시 루프를 종료
-            }
+        if (ogd && (Object.keys(ogf).length > 0)&& (ogd.id === 'ALL' || otherAbilityTable)) {
+            setSeries(ogd, setOtherGraph, otherAbilityTable, setOtherImageDict, ogf, (ogd.id === 'ALL' ? 'Other' : ogd.name));
         }
-        if(!isEmpty && componentSeries && type){
-            const mySeries = Object.entries(graph.graph).map( ([key,data]) => {
-                return ({
-                    name: `${data.name}`,
-                    data: data.data.map((value, index) => [index * data.pointInterval, value]),
-                    visible: componentSeries[data.name].visible,
-                    img: componentSeries[data.name].img,
-                    id: graph.id !== 'ALL' ? data.guid : null,
-                })
-            }).filter(result => result !== undefined);
-            if(graph.DTGraph && (type === 'Healing')){
-                const myDTGraph = graph.DTGraph;
-                const myDTGraphData = {
-                    name: `Damage Taken`,
-                    data: myDTGraph.data.map((value, index) => [index * myDTGraph.pointInterval, value]),
-                    visible: componentSeries['Damage Taken'].visible,
-                    img: null,
-                    id: null
-                }
-                mySeries.push(myDTGraphData);
-            }
-            setMyGraphData(mySeries);
-        }
-    }, [graph, componentSeries]);
+    }, [ogd, otherAbilityTable, ogf]);
 
     useEffect(() => {
-        if (otherGraphJSON && (otherGraphJSON.id === 'ALL' || otherAbilityTable)){
-            const id = otherGraphJSON.id;
-            const name = otherGraphJSON.name;
-            const graph = otherGraphJSON.graph;
-            const otherDTGraphJSON = otherGraphJSON.DTGraph;
-            setOtherGraph(prev => ({
-                ...prev,
-                ['id']: id,
-                ['name']: name,
-                ['graph']: graph,
-                ['DTGraph']: otherDTGraphJSON
-            }));
-            const newComponentSeries = {};
-            Object.entries(graph).forEach(([key, data]) => {
-                let img;
-                if(id !== 'ALL'){
-                    const find = otherAbilityTable.find(ability => ability.gameID === data.guid)
-                    if(find){
-                        img = `https://wow.zamimg.com/images/wow/icons/large/${find['icon']}`
-                    }
-                    else {
-                        img = undefined;
-                    }
-                } else{
-                    img = name[data.name];
-                }
-                newComponentSeries[data.name] = {
-                    visible: data.id === 'Total' ? true : false,
-                    img: img,
-                };
-            });
-            setOtherComponentSeries(prev => ({
-                ...prev,
-                ...newComponentSeries,
-                ['Damage Taken']: {'visible': false, 'img': undefined}
-            }));
-        }
-    }, [otherGraphJSON, otherAbilityTable]);
-
-    useEffect(() => {
-        let isEmpty = true;
-        for (let key in otherGraph) {
-            if (otherGraph.hasOwnProperty(key)) {
-                isEmpty = false;
-                break; // 첫 번째 키를 찾은 즉시 루프를 종료
-            }
-        }
-        if(!isEmpty && otherComponentSeries && type){
-            const otherSeries = Object.entries(otherGraph.graph).map( ([key,data]) => {
-                return ({
-                    name: `${data.name}`,
-                    data: data.data.map((value, index) => [index * data.pointInterval, value]),
-                    visible: otherComponentSeries[data.name].visible,
-                    img: otherComponentSeries[data.name].img,
-                    id: otherGraph.id !== 'ALL' ? data.guid : null,
-                })
-            }).filter(result => result !== undefined);
-            if(otherGraph.DTGraph && (type === 'Healing')){
-                const otherDTGraph = otherGraph.DTGraph;
-                const otherDTGraphData = {
-                    name: `Damage Taken`,
-                    data: otherDTGraph.data.map((value, index) => [index * otherDTGraph.pointInterval, value]),
-                    visible: otherComponentSeries['Damage Taken'].visible,
-                    img: otherComponentSeries['Damage Taken'].img,
-                    id: null
-                }
-                otherSeries.push(otherDTGraphData);
-            }
-            setOtherGraphData(otherSeries);
-        }
-    }, [otherGraph, otherComponentSeries]);
-
-
-    useEffect(() => {
-        if(myGraphData){
-            const newGraphData = JSON.parse(JSON.stringify(myGraphData));
-            if (otherGraphData){
-                newGraphData.push(...otherGraphData);
-            }
-            setGraphData(newGraphData);
-        }
-    }, [myGraphData, otherGraphData]);
-
-    useEffect(() => {
-        if (graphData && dataType && timeLength) {
-            const my = myGraphData.map((data) => {
-                return {
-                    name: data.name,
-                    data: data.data,
-                    img: data.img,
-                    id: data.id
-                }
-            });
-
-            setChartSeries(my);
-            if(otherGraphData){
-                const other = otherGraphData.map((data) => {
-                    return {
-                        name: data.name,
-                        data: data.data,
-                        img: data.img,
-                        id: data.id
-                    }
-                });
-                setOtherChartSeries(other);
-            }
-
-            const dType = dataType === 'Healing' ? 'Hps' : 'Dps';
+        if (Object.keys(graph).length > 0 && timeLength) {
+            const dType = type === 'Healing' ? 'Hps' : 'Dps';
             const tickPositions = expanded ? generateTickPositions(timeLength, 1000) : generateTickPositions(timeLength, 10000);
             const container = {
                 chart: {
@@ -305,11 +160,11 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, timeLength, abilityT
                 legend: {
                     enabled: false
                 },
-                series: graphData
+                series: Object.keys(otherGraph).length > 0 ? [...graph, ...otherGraph] : graph,
             };
             setChart(container);
         }
-    }, [graphData, dataType, timeLength, expanded]);
+    }, [graph, otherGraph, expanded]);
 
     useEffect(() => {
         if(timeLength){
@@ -332,15 +187,17 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, timeLength, abilityT
         <>
             <div style={{position:'sticky', left:0, marginBottom: 6}}>
                 <div style={{display:'flex', width:'100%'}}>
-                    <div className="chartbox left">
-                        <div className= "dropdown">
-                            <div className= {`dropdown-header ${isOpen === 'my' ? 'open' : ''}`} onClick={() => handleToggle('my')}>
-                                My Report Filter
-                                <span className={`dropdown-arrow ${isOpen === 'my' ? 'open' : ''}`}>▼</span>
+                    {(gd && Object.keys(graph).length > 0) && (
+                        <div className="chartbox left">
+                            <div className= "dropdown">
+                                <div className= {`dropdown-header ${isOpen === 'my' ? 'open' : ''}`} onClick={() => handleToggle('my')}>
+                                    My Report Filter
+                                    <span className={`dropdown-arrow ${isOpen === 'my' ? 'open' : ''}`}>▼</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    {(otherGraphData) && (
+                    )}
+                    {(ogd && Object.keys(otherGraph).length > 0) && (
                         <div className="chartbox" style= {{marginLeft:3}}>
                             <div className= "dropdown">
                                 <div className= {`dropdown-header ${isOpen === 'other' ? 'open' : ''}`} onClick={() => handleToggle('other')}>
@@ -350,25 +207,30 @@ function ChartComponent({myGraphJSON, otherGraphJSON, type, timeLength, abilityT
                             </div>
                         </div>
                     )}
-                    <div className="checkbox-item" style={{color:'white'}}>
-                        <input type="checkbox" id="all" name="all" checked={expanded} onChange={()=> setExpanded(!expanded)}/>
-                        <label htmlFor="all">Expand</label>
-                    </div>
+                    {(gd && Object.keys(graph).length > 0) && (
+                        <div className="checkbox-item" style={{color:'white'}}>
+                            <input type="checkbox" id="all" name="all" checked={expanded} onChange={()=> setExpanded(!expanded)}/>
+                            <label htmlFor="all">Expand</label>
+                        </div>
+                    )}
                 </div>
-                {(isOpen === 'my') && chartSeries &&(
-                    <div className="checkbox-grid" style = {{height: Math.ceil(chartSeries.length / 4) * 45}}>
-                        {renderTableItems(chartSeries, componentSeries, setComponentSeries)}
+                {(isOpen === 'my') &&(
+                    <div className="checkbox-grid" style = {{height: Math.ceil(Object.keys(imageDict).length / 4) * 45}}>
+                        {renderTableItems(imageDict, gf, sgf)}
                     </div>
                 )}
-                {(isOpen === 'other') && otherChartSeries &&(
-                    <div className="checkbox-grid" style = {{height: Math.ceil(chartSeries.length / 4) * 45}}>
-                        {renderTableItems(otherChartSeries, otherComponentSeries, setOtherComponentSeries)}
+                {(isOpen === 'other') &&(
+                    <div className="checkbox-grid" style = {{height: Math.ceil(Object.keys(otherImageDict).length / 4) * 45}}>
+                        {renderTableItems(otherImageDict, ogf, sogf)}
                     </div>
                 )}
             </div>
-            <div style={graphStyle}>
-                <HighchartsReact containerProps={{ style: {width:'100%' } }} highcharts={Highcharts} options={chart}/>
-            </div>
+            {chart && (
+                <div style={graphStyle}>
+                    <HighchartsReact containerProps={{ style: {width:'100%' } }} highcharts={Highcharts} options={chart}/>
+                </div>    
+            )}
+            
         </>
     );
 };
