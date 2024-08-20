@@ -81,6 +81,7 @@ export function get_phase_info(reportID) {
 }
 
 function splitByKey(data, key) {
+  console.log(data);
   const result = {};
   const keySet = new Set();
 
@@ -104,7 +105,7 @@ export function getKeyOptions(data, key){
   const {groupedData, keyList} = splitByKey(data, key);
   const keyOptions = keyList.map(key => {
     return {
-      value: JSON.stringify(groupedData[key]),
+      value: groupedData[key],
       text: key,
     }
   });

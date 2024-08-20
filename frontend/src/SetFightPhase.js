@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {get_phase_info, getKeyOptions} from './get_api_data';
 import Dropdown from './dropdown';
 
-function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStartTime, SetEndTime, existOnly}) {
+function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStartTime, SetEndTime, existOnly, initialFight, initialPhase}) {
     const [fightID, setFightID] = useState(null);
     const [fightIDOptions, setFightIDOptions] = useState(null);
     const [InitialFightID, setInitialFightID] = useState(null);
-    const [sourceID, setSourceID] = useState(null);
-    const [sourceName, setSourceName] = useState(null);
     const [fightstartTime, setFightStartTime] = useState(null);
     const [fightendTime, setFightEndTime] = useState(null);
-    const [sourceIDOptions, setSourceIDOptions] = useState(null);
     const [encounterID, setEncounterID] = useState(null);
     const [phaseList, setPhaseList] = useState(null);
     const [phaseIDOptions, setPhaseIDOptions] = useState(null);
@@ -18,24 +15,29 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
 
     useEffect(() => {
         preprocessingFightOption(FightIDOptions);
-    }, [FightIDOptions]);
+    }, [FightIDOptions, initialFight]);
 
     const preprocessingFightOption = (data) => {
         const killData = getKeyOptions(data, 'kill');
+        let killID = null;
         const fightIDOption = killData.map(kill => {
-          const killJson = JSON.parse(kill.value);
+          const killJson = kill.value;
           return killJson.map(killData => {
             if(killData.kill === true){
+                killID = killData.id;
+                console.log(killData);
               return {
-                value: JSON.stringify(killData),
-                text: 'KILL'
+                value: killData,
+                text: 'KILL',
+                optID: killData.id,
               }
             }
             else{
               return {
-                value: JSON.stringify(killData),
-                text: killData.lastPhaseIsIntermission ? 'P' + killData.lastPhase + ' ' + killData.bossPercentage + '%' : 'l' + killData.lastPhase + ' ' + killData.bossPercentage + '%' 
-              }
+                value: killData,
+                text: killData.lastPhaseIsIntermission ? 'P' + killData.lastPhase + ' ' + killData.bossPercentage + '%' : 'l' + killData.lastPhase + ' ' + killData.bossPercentage + '%',
+                optID: killData.id,
+                }
             }
           })
         });
@@ -46,19 +48,22 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
             SetError('No fight data');
             return;
         }
-        setInitialFightID('KILL');
+        if(initialFight){
+            setInitialFightID(Number(initialFight));
+        } else {
+            setInitialFightID(killID);
+        }
         SetError('');
     }
     
     const setFightHandler = (selectedFight) => {
         if(selectedFight){
-            const selectedFightJson = JSON.parse(selectedFight);
-            setFightID(selectedFightJson.id);
-            SetFightID(selectedFightJson.id);
-            setFightStartTime(selectedFightJson.startTime);
-            setFightEndTime(selectedFightJson.endTime);
-            setEncounterID(selectedFightJson.encounterID);
-            setPhaseList(selectedFightJson.phaseTransitions);
+            setFightID(selectedFight.id);
+            SetFightID(selectedFight.id);
+            setFightStartTime(selectedFight.startTime);
+            setFightEndTime(selectedFight.endTime);
+            setEncounterID(selectedFight.encounterID);
+            setPhaseList(selectedFight.phaseTransitions);
         }
     }
 
@@ -81,8 +86,9 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
             }
             const result = [];
             result.push({
-                value: JSON.stringify({startTime: fightstartTime, endTIme:fightendTime}),
+                value: {startTime: fightstartTime, endTIme:fightendTime},
                 text: 'All Phases',
+                optID: 'All Phases',
             })
             if(phaseList){
                 const phaseInfo = phaseList.map(item1 =>{
@@ -98,30 +104,35 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
                 for (let i= 0; i< ObjectPhaseInfo.length; i++){
                     if (i === ObjectPhaseInfo.length -1) {
                         result.push({
-                            value: JSON.stringify({startTime: ObjectPhaseInfo[i].startTime, endTIme:fightendTime}),
+                            value: {startTime: ObjectPhaseInfo[i].startTime, endTIme:fightendTime},
                             text: ObjectPhaseInfo[i].name,
+                            optID: ObjectPhaseInfo[i].id,
                         });
                     }
                     else{
                         result.push({
-                            value: JSON.stringify({startTime: ObjectPhaseInfo[i].startTime, endTIme:ObjectPhaseInfo[i+1].startTime}),
+                            value: {startTime: ObjectPhaseInfo[i].startTime, endTIme:ObjectPhaseInfo[i+1].startTime},
                             text: ObjectPhaseInfo[i].name,
+                            optID: ObjectPhaseInfo[i].id,
                         });
                     }
                 }            
             }
 
             setPhaseIDOptions(result);
-            setInitialPhaseID(result[0].text);
+            if(initialPhase){
+                setInitialPhaseID(Number(initialPhase));
+            } else {
+                setInitialPhaseID(result[0].optID);
+            }
             SetError('');
         });
     }
 
     const setPhaseHandler = (selectedPhase) => {
         if(selectedPhase){
-            const selectedPhaseJson = JSON.parse(selectedPhase);
-            SetStartTime(selectedPhaseJson.startTime);
-            SetEndTime(selectedPhaseJson.endTIme);
+            SetStartTime(selectedPhase.startTime);
+            SetEndTime(selectedPhase.endTIme);
         }
     }
 
@@ -143,7 +154,7 @@ function SetFightPhase({ReportID, SetError, FightIDOptions, SetFightID, SetStart
                     <Dropdown name="Fight" options={fightIDOptions} onSelectValue={setFightHandler} getIcon={false} initialOption={InitialFightID}/>
                 </div>
             )}
-            {phaseIDOptions && (
+            {phaseIDOptions && fightIDOptions &&(
                 <div style={{...dropdownStyle, marginLeft: existOnly?'6px': '3px'}}>
                     <Dropdown name="Phase" options={phaseIDOptions} onSelectValue={setPhaseHandler} getIcon={false} initialOption={initialPhaseID}/>
                 </div>

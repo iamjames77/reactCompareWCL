@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {get_fight_options, getKeyOptions} from './get_api_data';
 import Dropdown from './dropdown';
 
-function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) {
+function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions, initialFight, initialTy}) {
     const [reportID, setReportID] = useState(ReportID);
-    const [name, setName] = useState(null);
     const [nameOptions, setNameOptions] = useState(null);
-    const [type, setType] = useState(null);
+    const [initialName, setInitialName] = useState(null);
     const [initialType, setInitialType] = useState(false);
     const [typeOptions, setTypeOptions] = useState(null);
 
@@ -22,7 +21,6 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
         }
         setNameOptions(null);
         SetError('');
-        console.log('check');
         getNameOptions(reportID);
         setDTypeOption();
     }, [reportID]);
@@ -36,11 +34,22 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
           }
           SetError('');
           const nameOptionsList = getKeyOptions(data.data.reportData.report.fights, 'name');
-          const filternameOptionList = nameOptionsList.map(item => ({
-            ...item,
-            text: item.text.split(',')[0].trim(),
-            imageURL: `https://assets.rpglogs.com/img/warcraft/bosses/${JSON.parse(item.value)[0].encounterID}-icon.jpg`,
-          }));
+          const dict = {};
+          const filternameOptionList = nameOptionsList.map(items => {
+            const name = items.text.split(',')[0].trim();
+            items.value.forEach(item =>{
+                dict[item.id] = name; 
+            })
+            return({
+                ...items,
+                text: name,
+                optID: name,
+                imageURL: `https://assets.rpglogs.com/img/warcraft/bosses/${items.value[0].encounterID}-icon.jpg`,
+            })
+          });
+          if(initialFight){
+            setInitialName(dict[initialFight]);
+          }
           setNameOptions(filternameOptionList);  
         });
     }
@@ -48,8 +57,7 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
     // 보스 선택 처리
     const setSelectedNameHandler = (selectedName) => {
         if (selectedName){
-            const selectedNameJson = JSON.parse(selectedName);
-            setName(selectedNameJson[0].encounterID);
+            const selectedNameJson = selectedName;
             SetName(selectedNameJson[0].encounterID);
             SetFightIDOptions(selectedNameJson);
         }
@@ -58,16 +66,19 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
     // type option 설정
     const setDTypeOption = () => {
         const dTypeList = [
-            {value: 'DamageDone', text: 'Damage Done'},
-            {value: 'Healing', text: 'Healing'},
+            {value: 'DamageDone', text: 'Damage Done', optID: 'DamageDone'},
+            {value: 'Healing', text: 'Healing', optID: 'Healing'},
         ]
         setTypeOptions(dTypeList);
-        setInitialType(dTypeList[0].text);
+        if(initialTy && (initialTy === 'DamageDone' || initialTy === 'Healing')){
+            setInitialType(initialTy);
+        }else{
+            setInitialType(dTypeList[0].value);
+        }
     }
 
     // type 처리
     const setTypeHandler = (selectedType) => {
-        setType(selectedType);
         SetType(selectedType);
     }
 
@@ -84,12 +95,12 @@ function SetBossType({ReportID, SetError, SetName, SetType, SetFightIDOptions}) 
 
     return (
         <div style = {selectStyle}>
-            {nameOptions && (
+            {nameOptions && typeOptions &&(
                 <div style = {dropdownStyle}>
-                    <Dropdown name='boss' options={nameOptions} onSelectValue={setSelectedNameHandler} getIcon={true}/>
+                    <Dropdown name='boss' options={nameOptions} onSelectValue={setSelectedNameHandler} getIcon={true} initialOption={initialName}/>
                 </div>
             )}
-            {typeOptions && (
+            {nameOptions && typeOptions && (
                 <div style = {dropdownStyle}>
                     <Dropdown name='type' options={typeOptions} onSelectValue={setTypeHandler} getIcon={false} initialOption={initialType}/>
                 </div>

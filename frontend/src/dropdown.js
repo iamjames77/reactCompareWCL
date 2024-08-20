@@ -9,7 +9,7 @@ function Dropdown({name, options, onSelectValue, getIcon, initialOption, setOthe
         setSelectedOption(null);
         onSelectValue(null);
         if (initialOption) {
-            const initial = options.find(option => option.text === initialOption);
+            const initial = options.find(option => option.optID === initialOption);
             if(initial) {
                 setSelectedOption(initial);
                 onSelectValue(initial.value);

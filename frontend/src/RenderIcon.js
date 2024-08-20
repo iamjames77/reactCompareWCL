@@ -3,16 +3,11 @@ import IconColor from './IconColor';
 
 function RenderIcon({sc, scf, Name, chartWidth, chartLeft, chartRight, chartInterval, startTime, endTime, IDDict}){
 
-    useEffect(() => {
-        console.log(sc);
-    },[sc]);
-
     const tooltip = (timestamp, name, source, target, type, endCast) => {
         const Minute = Math.floor((timestamp % 3600000) / 60000) < 10 ? `0${Math.floor((timestamp % 3600000) / 60000)}` : Math.floor((timestamp % 3600000) / 60000);
         const Second = Math.floor((timestamp % 60000) / 1000) < 10? `0${Math.floor((timestamp % 60000) / 1000)}` : Math.floor((timestamp % 60000) / 1000);
         const miliSecond = Math.floor(timestamp % 1000) < 10 ? `00${Math.floor(timestamp % 1000)}` : Math.floor(timestamp % 1000) < 100 ? `0${Math.floor(timestamp % 1000)}` : Math.floor(timestamp % 1000);
         if (endCast){
-            console.log(endCast);
             const endMinute = Math.floor((endCast % 3600000) / 60000) < 10 ? `0${Math.floor((endCast % 3600000) / 60000)}` : Math.floor((endCast % 3600000) / 60000);
             const endSecond = Math.floor((endCast % 60000) / 1000) < 10? `0${Math.floor((endCast % 60000) / 1000)}` : Math.floor((endCast % 60000) / 1000);
             const endMiliSecond = Math.floor(endCast % 1000) < 100 ? `00${Math.floor(endCast % 1000)}` : Math.floor(endCast % 1000) < 100 ? `0${Math.floor(endCast % 1000)}` : Math.floor(endCast % 1000);
@@ -89,7 +84,7 @@ function RenderIcon({sc, scf, Name, chartWidth, chartLeft, chartRight, chartInte
                                     <a href ={'https://www.wowhead.com/spell=' + value.abilityGameID} target="_blank" rel="noreferrer">
                                         <img src={`https://wow.zamimg.com/images/wow/icons/large/${value.icon}`} alt="" className={`bar-img ${fail ? 'failed' : ''}`}/>
                                     </a>
-                                    {success && (
+                                    {success && value.color && (
                                         <div style={{position: 'absolute', display: 'flex',justifyContent:'center', alignItems: 'center', height: 34,
                                             left: 34, width: (array[index+i][1].timestamp - value.timestamp) / 1000 * chartInterval - 17, backgroundColor: `rgb(${value?.color[0]},${value?.color[1]},${value?.color[2]}`}}/>
                                     )}

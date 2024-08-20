@@ -82,8 +82,16 @@ function App() {
   const [otherEnemyCastTable, setOtherEnemyCastTable] = useState({});
   const [enemyCastFilter, setEnemyCastFilter] = useState(null);
   const [otherEnemyCastFilter, setOtherEnemyCastFilter] = useState(null);
-  const [selectedResource, setSelectedResource] = useState(null);
-  const [selectedOtherResource, setSelectedOtherResource] = useState(null);
+
+  const [initialFight, setInitialFight] = useState(null);
+  const [initialOtherFight, setInitialOtherFight] = useState(null);
+  const [initialSource, setInitialSource] = useState(null);
+  const [initialOtherSource, setInitialOtherSource] = useState(null);
+  const [initialTarget, setInitialTarget] = useState(null);
+  const [initialOtherTarget, setInitialOtherTarget] = useState(null);
+  const [initialType, setInitialType] = useState(null);
+  const [initialPhase, setInitialPhase] = useState(null);
+  const [initialOtherPhase, setInitialOtherPhase] = useState(null);
 
   // 입력 변경 시
   const myInputChange = (event) => {
@@ -98,10 +106,70 @@ function App() {
     setNotRenderGraph(event.target.checked);
   }
 
+  function parseWarcraftLogsInput(input,sR, iF, iS, iT, iTy, iPh) {
+    let reportId = null;
+    let fight = null;
+    let source = null;
+    let target = null;
+    let type = null;
+    let phase = null;
+
+    // 정규 표현식 패턴: "reports/" 뒤에 오는 식별자 추출
+    const pattern = /\/reports\/([a-zA-Z0-9]+)/;
+    const urlPattern = /^(https?:\/\/)?(www\.)?([a-zA-Z0-9.-]+)(\/reports\/[a-zA-Z0-9]+)/;
+
+    try {
+        // 먼저 URL 객체로 처리 시도
+        const url = new URL(input);
+        const match = url.pathname.match(pattern);
+        reportId = match ? match[1] : null;
+
+        if (url.hash) {
+            const paramsString = url.hash.substring(1); // "#" 제거
+            const params = new URLSearchParams(paramsString);
+
+            fight = params.get('fight');
+            source = params.get('source');
+            target = params.get('target');
+            type = params.get('type');
+            phase = params.get('phase');
+        }
+    } catch (e) {
+        // URL 객체로 처리 실패 시 수동으로 분석
+        if (urlPattern.test(input)) {
+            const match = input.match(pattern);
+            reportId = match ? match[1] : null;
+
+            const hashIndex = input.indexOf('#');
+            if (hashIndex > -1) {
+                const paramsString = input.slice(hashIndex + 1);
+                const params = new URLSearchParams(paramsString);
+
+                fight = params.get('fight');
+                source = params.get('source');
+                target = params.get('target');
+                type = params.get('type');
+                phase = params.get('phase');
+            }
+        } else if (/^[a-zA-Z0-9]+$/.test(input)) {
+            // 단순 reportID일 경우
+            reportId = input;
+        }
+    }
+
+    console.log(reportId, fight, source, target, type, phase);
+    sR(reportId);
+    iF(fight);
+    iS(source);
+    iT(target);
+    if(iTy) iTy(type);
+    iPh(phase);
+  }
+
   // URL 입력 후 버튼 클릭 시
   const handleSubmit = () => {
-    setReportID(inputMyValue);
-    setOtherReportID(inputOtherValue);
+    parseWarcraftLogsInput(inputMyValue, setReportID, setInitialFight, setInitialSource, setInitialTarget, setInitialType, setInitialPhase);
+    parseWarcraftLogsInput(inputOtherValue, setOtherReportID, setInitialOtherFight, setInitialOtherSource, setInitialOtherTarget, null, setInitialOtherPhase);
   };
 
   useEffect(() => {
@@ -145,7 +213,6 @@ function App() {
         result = {...result, DTGraph: dtgraph.find(item => item.id === 'Total')};
         gf['Damage Taken'] = false;
       }
-      console.log(gf);
       return {result, gf};
     }
     sG((await fetchResult(r, f, s, t, ty, sT, eT, sN)).result);
@@ -209,6 +276,10 @@ function App() {
       }));
     });
   };
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
   
   // Master Data
   useEffect(() => {
@@ -269,6 +340,9 @@ function App() {
     setTargetID(null);
     setIDDict(null);
     setEnemyCastTable({});
+    if(fight){
+      setInitialFight(null);
+    }
   }, [fight]);
 
   useEffect(() => {
@@ -276,6 +350,9 @@ function App() {
     setOtherTargetID(null);
     setOtherIDDict(null);
     setOtherEnemyCastTable({});
+    if(otherFight){
+      setInitialOtherFight(null);
+    }
   }, [otherFight]);
 
   useEffect(() => {
@@ -283,6 +360,11 @@ function App() {
     setCastTable(null);
     setBuffFilter({});
     setBuffTable(null);
+    if(sourceID){
+      setInitialSource(null);
+    }
+    console.log(sourceID);
+    console.log(initialSource);
   }, [sourceID]);
 
   useEffect(() => {
@@ -290,7 +372,22 @@ function App() {
     setOtherCastTable(null);
     setOtherBuffFilter({});
     setOtherBuffTable(null);
+    if(otherSourceID){
+      setInitialOtherSource(null);
+    }
   },[otherSourceID]);
+
+  useEffect(() => {
+    if(targetID){
+      setInitialTarget(null);
+    }
+  }, [targetID]);
+
+  useEffect(() => {
+    if(otherTargetID){
+      setInitialOtherTarget(null);
+    }
+  }, [otherTargetID]);
   
   // Graph Data
   useEffect(() => {    
@@ -370,6 +467,7 @@ function App() {
         setFriendlyNPCs(data.data.reportData.report.fights[0].friendlyNPCs);
       })
     }
+    setInitialPhase(null);
   }, [startTime, endTime]);
 
   // Get Other NPC data
@@ -392,6 +490,7 @@ function App() {
         setOtherFriendlyNPCs(data.data.reportData.report.fights[0].friendlyNPCs);
       })
     }
+    setInitialOtherPhase(null);
   }, [otherStartTime, otherEndTime]);
 
   // Get Table Data
@@ -426,7 +525,7 @@ function App() {
   return (
     <div className="App">
       <div className="App-header">
-        <h1>CompareWCL</h1>
+        <h1 onClick={handleRefresh} style={{ cursor: 'pointer' }}>WCL Helper</h1>
         <input className="myInput" type="text" value={inputMyValue} onChange={myInputChange} placeholder="Enter Your ReportID" />
         <input className="otherInput" type="text" value={inputOtherValue} onChange={otherInputChange} placeholder="Enter Other ReportID" />
         <button onClick={handleSubmit}><FontAwesomeIcon icon={faSearch} /></button>
@@ -437,36 +536,38 @@ function App() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <div>
         {reportID && (
-          <SetBossType ReportID={reportID} SetError={setError} SetName={setName} SetType={setType} SetFightIDOptions={setFightIDoptions} />
+          <SetBossType ReportID={reportID} SetError={setError} SetName={setName} SetType={setType} SetFightIDOptions={setFightIDoptions} initialFight={initialFight} initialTy={initialType}/>
         )}
         <div style={{display:'flex'}}>
           <div style={{width: otherFightIDoptions ? '50%' : '100%'}}>
             {fightIDoptions && (
-              <SetFightPhase ReportID={reportID} SetError={setError} FightIDOptions={fightIDoptions} SetFightID={setFight} SetStartTime={setStartTime} SetEndTime={setEndTime} existOnly={!otherFightIDoptions} />
+              <SetFightPhase ReportID={reportID} SetError={setError} FightIDOptions={fightIDoptions} SetFightID={setFight} SetStartTime={setStartTime} SetEndTime={setEndTime} existOnly={!otherFightIDoptions} 
+              initialFight={initialFight} initialPhase={initialPhase}/>
             )}
           </div>
           <div style={{width: otherFightIDoptions ? '50%' : '0%'}}>
             {otherFightIDoptions && (
-              <SetFightPhase ReportID={otherReportID} SetError={setError} FightIDOptions={otherFightIDoptions} SetFightID={setOtherFight} SetStartTime={setOtherStartTime} SetEndTime={setOtherEndTime} />
+              <SetFightPhase ReportID={otherReportID} SetError={setError} FightIDOptions={otherFightIDoptions} SetFightID={setOtherFight} SetStartTime={setOtherStartTime} SetEndTime={setOtherEndTime} 
+              initialFight={initialOtherFight} initialPhase={initialOtherPhase}/>
             )}
           </div>
         </div>
         <div style={{display:'flex'}}>
           <div style={{width: otherFightIDoptions ? '50%' : '100%'}}>
             {startTime && endTime && (
-              <SetSourceTarget ReportID={reportID} fightID={fight} SetError={setError} SetSourceID={setSourceID} SetSourceName={setSourceName} SetSpec={setSpec} type={type} 
+              <SetSourceTarget ReportID={reportID} fightID={fight} SetError={setError} SetSourceID={setSourceID} SetSourceName={setSourceName} SetSpec={setSpec} type={type} initialSID={initialSource} initialTID={initialTarget}
               friendlyNPC={friendlyNPCs} enemyNPC={enemyNPCs} masterNPCs={masterNPCs} SetTargetID={setTargetID} existOnly={!otherFightIDoptions} setIDDict={setIDDict}/>
             )}
           </div>
           <div style={{width: otherFightIDoptions ? '50%' : '0%'}}>
             {otherStartTime && otherEndTime && (
               <SetSourceTarget ReportID={otherReportID} fightID={otherFight} SetError={setError} SetSourceID={setOtherSourceID} SetSourceName={setOtherSourceName} SetSpec={setOtherSpec} type ={type}
-              friendlyNPC={otherFriendlyNPCs} enemyNPC= {otherEnemyNPCs} masterNPCs={otherMasterNPCs} SetTargetID = {setOtherTargetID} setIDDict={setOtherIDDict}/>
+              friendlyNPC={otherFriendlyNPCs} enemyNPC= {otherEnemyNPCs} masterNPCs={otherMasterNPCs} SetTargetID = {setOtherTargetID} setIDDict={setOtherIDDict} initialSID={initialOtherSource} initialTID={initialOtherTarget}/>
             )}
           </div>
         </div>
       </div>
-      <div style= {{overflowX: 'auto', margin: 6}}>
+      <div className={`custom-horizontal-scrollbar ${graphData ? 'show' : 'hide'}`} style= {{overflowX: 'scroll', margin: 6}}>
         {graphData && (
           <ChartComponent gd={graphData} ogd={otherGraphData} type={type} gf ={graphFilter} ogf = {otherGraphFilter} sgf = {setGraphFilter} sogf = {setOtherGraphFilter}
           timeLength= {timeLength} abilityTable={masterAbilities} otherAbilityTable={otherMasterAbilities}/>

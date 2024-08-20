@@ -43,7 +43,6 @@ def get_fight_data():
 @app.route('/get_player_details', methods=['POST'])
 def get_player_details():
     data = request.get_json()
-    print(data)
     report, fight = data.get('reportID'), data.get('fight')
     response = get_api_data(player_query, code=report, fight =fight)
     return jsonify(response)
@@ -108,10 +107,8 @@ def get_hostility_event_data():
 def get_buffs_event_data():
     data = request.get_json()
     report, fight, source, abilityID, startTime, endTime = data.get('reportID'), int(data.get('fight')), data.get('source'), float(data.get('abilityID')), float(data.get('startTime')), float(data.get('endTime'))
-    print(report, fight, source, abilityID, startTime, endTime)
     response = get_api_data(get_buffs_event_query, code=report, abilityID= abilityID,fight= fight, startTime= startTime, endTime = endTime)
     filter_response = {'data': [data for data in response['data']['reportData']['report']['events']['data'] if data['targetID'] == source], 'nextPagetTimestamp': response['data']['reportData']['report']['events']['nextPageTimestamp']}
-    print(filter_response)
     return jsonify(filter_response)
 
 @app.route('/get_casts_event_data', methods=['POST'])
@@ -140,4 +137,5 @@ def serve(path):
         return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host = "192.168.219.104", port=12345,debug=True)
+    #app.run(debug=True)

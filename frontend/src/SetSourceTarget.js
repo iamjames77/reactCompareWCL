@@ -4,10 +4,11 @@ import {get_player_data, getKeyOptions} from './get_api_data';
 import specIconURL from './specIconURL';
 
 function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID, SetSourceName, SetSpec, type, friendlyNPC, enemyNPC,masterNPCs, existOnly,
-    setIDDict
+    setIDDict, initialSID, initialTID
 }) {
     const [sourceIDOptions, setSourceIDOptions] = useState(null);
     const [targetIDOptions, setTargetIDOptions] = useState(null);
+    const [initialSourceID, setInitialSourceID] = useState(null);
     const [initialTargetID, setInitialTargetID] = useState(null);
 
     useEffect(() => {
@@ -23,46 +24,50 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
         }
     }, [ReportID, fightID]);
 
-    const setSourceOptions = () => {
+    const setSourceOptions = async () => {
         if(ReportID && fightID){
-            get_player_data(ReportID, fightID).then(data => {
-                if (data.errors) {
-                    console.log('28')
-                    SetError(data.errors[0].message);
-                    return;
-                }
-                const tankList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.tanks, 'name').map(item => ({
-                    ...item,
-                    roles: 'tank'
-                    }));
-                const healerList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.healers, 'name').map(item => ({
-                    ...item,
-                    roles: 'healer'
-                    }));
-                const dpsList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.dps, 'name').map(item => ({
-                    ...item,
-                    roles: 'dps'
-                    }));
-                const sourceList = tankList.concat(healerList).concat(dpsList);
-                const sourceOptionList = sourceList.map(item => {
-                    const JSONValue = JSON.parse(item.value)[0];
-                    const specIcon = specIconURL[JSONValue.type].find(spec => spec.spec === JSONValue.specs[0].spec).icon;
-                    return {
-                        value: JSON.stringify(JSONValue),
-                        text: item.text,
-                        imageURL: specIcon,
-                        roles: item.roles
-                    };
-                });
-                const AllOption = {
-                    value: 'ALL',
-                    text: 'ALL',
-                    imageURL: 'https://wow.zamimg.com/images/wow/icons/large/ui_greenflag.jpg',
-                    roles: 'All'
-                }
-                setSourceIDOptions([AllOption, ...sourceOptionList]);
-                SetError('');
+            const data = await get_player_data(ReportID, fightID)
+            if (data.errors) {
+                console.log('28')
+                SetError(data.errors[0].message);
+                return;
+            }
+            const tankList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.tanks, 'name').map(item => ({
+                ...item,
+                roles: 'tank'
+                }));
+            const healerList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.healers, 'name').map(item => ({
+                ...item,
+                roles: 'healer'
+                }));
+            const dpsList = getKeyOptions(data.data.reportData.report.playerDetails.data.playerDetails.dps, 'name').map(item => ({
+                ...item,
+                roles: 'dps'
+                }));
+            const sourceList = tankList.concat(healerList).concat(dpsList);
+            const sourceOptionList = sourceList.map(item => {
+                const JSONValue = item.value[0];
+                const specIcon = specIconURL[JSONValue.type].find(spec => spec.spec === JSONValue.specs[0].spec).icon;
+                return {
+                    value: JSONValue,
+                    text: item.text,
+                    imageURL: specIcon,
+                    roles: item.roles,
+                    optID: JSONValue.id
+                };
             });
+            const AllOption = {
+                value: 'ALL',
+                text: 'ALL',
+                imageURL: 'https://wow.zamimg.com/images/wow/icons/large/ui_greenflag.jpg',
+                roles: 'All',
+                optID: 'ALL'
+            }
+            setSourceIDOptions([AllOption, ...sourceOptionList]);
+            SetError('');
+            if(initialSID){
+                setInitialSourceID(Number(initialSID));
+            }
         }
         else{
             setSourceIDOptions(null);
@@ -84,10 +89,9 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
                 SetSpec('ALL');
                 return;
             }
-            const selectedSourceJson = JSON.parse(selectedSource);
-            SetSourceID(selectedSourceJson.id);
-            SetSourceName(selectedSourceJson.name);
-            SetSpec({'class': selectedSourceJson.type, 'spec': selectedSourceJson.specs[0].spec});
+            SetSourceID(selectedSource.id);
+            SetSourceName(selectedSource.name);
+            SetSpec({'class': selectedSource.type, 'spec': selectedSource.specs[0].spec});
         }
     }
 
@@ -98,7 +102,7 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
             const npcList = friendlyNPC.map(item => {
                 const npcINFO = masterNPCs.find(npc => npc.gameID === item.gameID);
                 return {
-                    value: JSON.stringify({id: item.id}),
+                    value: {id: item.id},
                     text: npcINFO.name,
                 }
             });
@@ -106,14 +110,16 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
             const enemyList = enemyNPC.map(item => {
                 const npcINFO = masterNPCs.find(npc => npc.gameID === item.gameID);
                 return {
-                    value: JSON.stringify({id: item.id}),
+                    value: {id: item.id},
                     text: npcINFO.name,
+                    optID: item.id
                 }
             });
             const AllOption = {
                 value: 'ALL',
                 text: 'ALL',
-                imageURL: 'https://wow.zamimg.com/images/wow/icons/large/ui_greenflag.jpg'
+                imageURL: 'https://wow.zamimg.com/images/wow/icons/large/ui_greenflag.jpg',
+                optID: 'ALL'
             }
             if(type === 'Healing'){
                 setTargetIDOptions(friendlyList);
@@ -124,11 +130,11 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
             const dict = {}
             friendlyList.forEach(item => {
                 if(item.value !== 'ALL'){
-                    dict[JSON.parse(item.value).id] = item.text;
+                    dict[item.value.id] = item.text;
                 }
             });
             enemyList.forEach(item => {
-                dict[JSON.parse(item.value).id] = item.text;
+                dict[item.value.id] = item.text;
             });
             setIDDict(dict);
         }
@@ -144,8 +150,12 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
                 SetTargetID('ALL');
                 return;
             }
-            const selectedTargetJson = JSON.parse(selectedTarget);
-            SetTargetID(selectedTargetJson.id);
+            const selectedTargetJson = selectedTarget;
+            if(initialTID){
+                setInitialTargetID(Number(initialTID));
+            } else {
+                setInitialTargetID(selectedTargetJson.id);
+            }
         }
     }
 
@@ -162,14 +172,14 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
 
     return (
         <div style = {selectStyle}>
-            {sourceIDOptions && (
+            {sourceIDOptions && targetIDOptions && (
                 <div style={{...dropdownStyle, marginRight: existOnly? '6px' : '3px'}}>
-                    <Dropdown name='source' options={sourceIDOptions} onSelectValue={setSourceHandler} getIcon={true}/>
+                    <Dropdown name='source' options={sourceIDOptions} onSelectValue={setSourceHandler} initialOption={initialSourceID} getIcon={true}/>
                 </div>
             )}
-            {targetIDOptions && (
+            {targetIDOptions && sourceIDOptions && (
                 <div style={{...dropdownStyle, marginLeft: existOnly? '6px': '3px'}}>
-                    <Dropdown name='target' options={targetIDOptions} onSelectValue={setTargetHandler} initialOption={initialTargetID}getIcon={true}/>
+                    <Dropdown name='target' options={targetIDOptions} onSelectValue={setTargetHandler} initialOption={initialTargetID} getIcon={true}/>
                 </div>
             )}
       </div>
