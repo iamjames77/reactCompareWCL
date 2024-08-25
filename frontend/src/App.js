@@ -57,10 +57,8 @@ function App() {
 
   const [masterAbilities, setMasterAbilities] = useState(null);
   const [masterNPCs, setMasterNPCs] = useState(null);
-  const [reportLang, setReportLang] = useState(null);
   const [otherMasterAbilities, setOtherMasterAbilities] = useState(null);
   const [otherMasterNPCs, setOtherMasterNPCs] = useState(null);
-  const [otherReportLang, setOtherReportLang] = useState(null);
   const [friendlyNPCs, setFriendlyNPCs] = useState(null);
   const [enemyNPCs, setEnemyNPCs] = useState(null);
   const [otherFriendlyNPCs, setOtherFriendlyNPCs] = useState(null);
@@ -417,7 +415,7 @@ function App() {
         const spell = item.spell;
         const name = item.name;
         const byTarget = item.byTarget;
-        getResourceData(reportID, fight, sourceID, spell, startTime, endTime, dtype, byTarget, name,setResource);
+        getResourceData(reportID, fight, sourceID, spell, startTime, endTime, dtype, byTarget, name, setResource);
       });
     }
   }, [sourceID, startTime, endTime, spec]);

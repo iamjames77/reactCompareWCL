@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import IconColor from './IconColor';
+import React from 'react';
 
 function RenderIcon({sc, scf, Name, chartWidth, chartLeft, chartRight, chartInterval, startTime, endTime, IDDict}){
 

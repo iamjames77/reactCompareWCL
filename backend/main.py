@@ -128,6 +128,10 @@ def get_resource_data():
         response = get_api_data(get_resource_query, code=report, fight= fight, sourceID=source, targetID=source, abilityID=abilityID,startTime= startTime, endTime = endTime, type = type)
     return jsonify(response)
 
+@app.route('/reports/<reportID>')
+def get_report(reportID):
+    return send_from_directory(app.static_folder, 'index.html')
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -137,5 +141,5 @@ def serve(path):
         return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
-    app.run(host = "192.168.219.104", port=12345,debug=True)
-    #app.run(debug=True)
+    #app.run(host = "192.168.219.104", port=12345,debug=True)
+    app.run(debug=True)
