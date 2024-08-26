@@ -85,7 +85,7 @@ function SetSourceTarget({report, SetError, setReport, type, existOnly}) {
                 source: selectedSource.id,
                 sourceName: selectedSource.name,
                 class: selectedSource.type,
-                spec: selectedSource.specs[0].spec,
+                spec: selectedSource.specs,
             }));
         }
     }

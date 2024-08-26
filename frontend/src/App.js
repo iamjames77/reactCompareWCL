@@ -248,7 +248,7 @@ function App() {
       });
       sR(prev => ({
         ...prev,
-        [n]: result
+        resource: {...prev.resource, [n]: result}
       }));
     });
   };
@@ -347,8 +347,9 @@ function App() {
 
   // Resource Data
   useEffect(() => {
+    console.log(report);
     if (report.reportID && report.fight && report.source && report.startTime && report.endTime && report.spec && report.source !== 'ALL') {
-      specResource[report.class][report.spec].forEach(item => {
+      specResource[report.class][report.spec[0].spec].forEach(item => {
         const dtype = item.type;
         const spell = item.spell;
         const name = item.name;
@@ -359,8 +360,9 @@ function App() {
   }, [report.source, report.startTime, report.endTime, report.class, report.spec]);
   // Resource Data
   useEffect(() => {
+    console.log(otherReport);
     if (otherReport.reportID && otherReport.fight && otherReport.source && otherReport.startTime && otherReport.endTime && otherReport.spec && otherReport.source !== 'ALL') {
-      specResource[otherReport.class][otherReport.spec].forEach(item => {
+      specResource[otherReport.class][otherReport.spec[0].spec].forEach(item => {
         const dtype = item.type;
         const spell = item.spell;
         const name = item.name;
