@@ -3,13 +3,13 @@ import { get_buffs_event_data } from './get_api_data';
 import './castBar.css';
 import RenderIcon from './RenderIcon';
 
-function BuffsTimeLine({reportID, fight, startTime, endTime, SetError, sourceID, table, filter, chartLeft, chartInterval, chartRight, chartWidth, IDDict}) {
+function BuffsTimeLine({report, SetError, chartLeft, chartInterval, chartRight, chartWidth}) {
     const [data, setData] = useState({});
     const [gotBuffList, setGotBuffList] = useState({});
 
     const getBuffData = async (id, abilityID, nT) => {
         const fetchEventData = async (id, abilityID, nT) => {
-            const data = await get_buffs_event_data(reportID, fight, sourceID, abilityID, nT, endTime);
+            const data = await get_buffs_event_data(report.reportID, report.fight, report.source, abilityID, nT, report.endTime);
             if (data.errors) {
                 console.log('28');
                 SetError(data.errors[0].message);
@@ -31,20 +31,20 @@ function BuffsTimeLine({reportID, fight, startTime, endTime, SetError, sourceID,
 
     useEffect(() => {
         const get_event_data = async () => {
-            if(table && filter){
+            if(report.globalBuffTable && report.buffFilter){
                 const fetchEventData = async(filter) => {
                     Object.keys(filter).forEach(async (abilityID) => {
                         if(!gotBuffList[abilityID]){
-                            console.log(sourceID, abilityID, startTime);
-                            const event = await getBuffData(sourceID, abilityID, startTime);
-                            if(!table[abilityID]){
+                            console.log(report.source, abilityID, report.startTime);
+                            const event = await getBuffData(report.source, abilityID, report.startTime);
+                            if(!report.globalBuffTable[abilityID]){
                                 console.log(abilityID);
                             }   
                             const result = event.map(e => ({
                                 ...e,
-                                name : table[e.abilityGameID]?.name,
-                                icon : table[e.abilityGameID]?.abilityIcon,
-                                color : table[e.abilityGameID]?.iconColor,
+                                name : report.globalBuffTable[e.abilityGameID]?.name,
+                                icon : report.globalBuffTable[e.abilityGameID]?.abilityIcon,
+                                color : report.globalBuffTable[e.abilityGameID]?.iconColor,
                             }));
                             console.log(result);
                             setData(prevState => ({
@@ -58,11 +58,11 @@ function BuffsTimeLine({reportID, fight, startTime, endTime, SetError, sourceID,
                         }
                     });
                 }
-                await fetchEventData(filter);
+                await fetchEventData(report.buffFilter);
             }
         }
         get_event_data();
-    },[table, filter]);
+    },[report.globalBuffTable, report.buffFilter]);
 
     useEffect(() => {
         if(Object.keys(data).length > 0){
@@ -75,29 +75,29 @@ function BuffsTimeLine({reportID, fight, startTime, endTime, SetError, sourceID,
     },[gotBuffList]);
 
     useEffect(() => {
-        console.log('filter', filter);
-    }  ,[filter]);
+        console.log('filter', report.buffFilter);
+    }  ,[report.buffFilter]);
 
     return (
         <div>
             {
             (Object.keys(data).length > 0) && (Object.entries(data)).map(([index, value]) =>{
                 console.log(value);
-                if(filter[index] === false){
+                if(report.buffFilter[index] === false){
                     return;
                 }
                 return(
                 <RenderIcon 
                     sc = {value}
-                    scf={filter}
-                    Name = {`${IDDict[sourceID]} ${value[0]?.name}`}
+                    scf={report.buffFilter}
+                    Name = {`${report.IDDict[report.source]} ${value[0]?.name}`}
                     chartLeft={chartLeft}
                     chartInterval={chartInterval}
                     chartRight={chartRight}
                     chartWidth={chartWidth}
-                    startTime={startTime}
-                    endTime = {endTime}
-                    IDDict={IDDict}
+                    startTime={report.startTime}
+                    endTime = {report.endTime}
+                    IDDict={report.IDDict}
                 />)
             })
             }

@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Highcharts, { time } from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import './dropdown.css';
 
-function ChartComponent({gd, ogd, type, timeLength, abilityTable, otherAbilityTable, gf, ogf, sgf, sogf}) {
+function ChartComponent({R, oR, type, timeLength, abilityTable, otherAbilityTable, sr, sor}) {
     const [graph, setGraph] = useState({});
     const [otherGraph, setOtherGraph] = useState({});
     const [chart, setChart] = useState(null);
@@ -42,8 +42,11 @@ function ChartComponent({gd, ogd, type, timeLength, abilityTable, otherAbilityTa
         setIsOpen(isOpen === t ? null : t);
     };
 
-    const toggleSeriesVisibility = (name, gf,sgf) => {
-        sgf({...gf, [name]: !gf[name]});
+    const toggleSeriesVisibility = (name, gf, sr) => {
+        sr(prevState => ({
+            ...prevState,
+            graphFilter: {...gf, [name]: !gf[name]}
+        }))
     };
 
     const setSeries = (gd, sG, at, sid, gf, Name) => {
@@ -81,13 +84,13 @@ function ChartComponent({gd, ogd, type, timeLength, abilityTable, otherAbilityTa
         sG(series);
     };
 
-    const renderTableItems = (imgDict, gf, sgf) => {
+    const renderTableItems = (imgDict, gf, sr) => {
         const result = Object.entries(imgDict).map(([index, item]) => {
             return (
                 <div key={index} className="checkbox-item">
                     <input type="checkbox" id={index} name={item.name}
                     checked = {gf[item.name]}
-                    onChange={()=> toggleSeriesVisibility(item.name, gf, sgf)}/>
+                    onChange={()=> toggleSeriesVisibility(item.name, gf, sr)}/>
                     <a href={item.id ? 'https://www.wowhead.com/spell=' + item.id : '#'} target={item.id ? "_blank" : "_self"}  rel="noreferrer">
                         <img src={item.img} alt="" className="dropdown-icon"/>
                     </a>
@@ -100,16 +103,16 @@ function ChartComponent({gd, ogd, type, timeLength, abilityTable, otherAbilityTa
 
     // Load data initially
     useEffect(() => {
-        if (gd && (Object.keys(gf).length > 0) && (gd.id === 'ALL' || abilityTable)) {
-            setSeries(gd, setGraph, abilityTable, setImageDict, gf, (gd.id === 'ALL' ? 'My' : gd.name));
+        if (R.graphData && (Object.keys(R.graphFilter).length > 0) && (R.id === 'ALL' || abilityTable)) {
+            setSeries(R.graphData, setGraph, abilityTable, setImageDict, R.graphFilter, (R.graphData.id === 'ALL' ? 'My' : R.graphData.name));
         }
-    }, [gd, abilityTable, gf]);
+    }, [R.graphData, abilityTable, R.graphFilter]);
 
     useEffect(() => {
-        if (ogd && (Object.keys(ogf).length > 0)&& (ogd.id === 'ALL' || otherAbilityTable)) {
-            setSeries(ogd, setOtherGraph, otherAbilityTable, setOtherImageDict, ogf, (ogd.id === 'ALL' ? 'Other' : ogd.name));
+        if (oR.graphData && (Object.keys(oR.graphFilter).length > 0)&& (oR.graphData.id === 'ALL' || otherAbilityTable)) {
+            setSeries(oR.graphData, setOtherGraph, otherAbilityTable, setOtherImageDict, oR.graphFilter, (oR.graphData.id === 'ALL' ? 'Other' : oR.graphData.name));
         }
-    }, [ogd, otherAbilityTable, ogf]);
+    }, [oR.graphData, otherAbilityTable, oR.graphFilter]);
 
     useEffect(() => {
         if (Object.keys(graph).length > 0 && timeLength) {
@@ -182,12 +185,12 @@ function ChartComponent({gd, ogd, type, timeLength, abilityTable, otherAbilityTa
             }
         }
     }, [timeLength, expanded]);
-    
+
     return (
         <>
             <div style={{position:'sticky', left:0, marginBottom: 6}}>
                 <div style={{display:'flex', width:'100%'}}>
-                    {(gd && Object.keys(graph).length > 0) && (
+                    {(R.graphData && Object.keys(graph).length > 0) && (
                         <div className="chartbox left">
                             <div className= "dropdown">
                                 <div className= {`dropdown-header ${isOpen === 'my' ? 'open' : ''}`} onClick={() => handleToggle('my')}>
@@ -197,7 +200,7 @@ function ChartComponent({gd, ogd, type, timeLength, abilityTable, otherAbilityTa
                             </div>
                         </div>
                     )}
-                    {(ogd && Object.keys(otherGraph).length > 0) && (
+                    {(oR.graphData && Object.keys(otherGraph).length > 0) && (
                         <div className="chartbox" style= {{marginLeft:3}}>
                             <div className= "dropdown">
                                 <div className= {`dropdown-header ${isOpen === 'other' ? 'open' : ''}`} onClick={() => handleToggle('other')}>
@@ -207,7 +210,7 @@ function ChartComponent({gd, ogd, type, timeLength, abilityTable, otherAbilityTa
                             </div>
                         </div>
                     )}
-                    {(gd && Object.keys(graph).length > 0) && (
+                    {(R.graphData && Object.keys(graph).length > 0) && (
                         <div className="checkbox-item" style={{color:'white'}}>
                             <input type="checkbox" id="all" name="all" checked={expanded} onChange={()=> setExpanded(!expanded)}/>
                             <label htmlFor="all">Expand</label>
@@ -216,12 +219,12 @@ function ChartComponent({gd, ogd, type, timeLength, abilityTable, otherAbilityTa
                 </div>
                 {(isOpen === 'my') &&(
                     <div className="checkbox-grid" style = {{height: Math.ceil(Object.keys(imageDict).length / 4) * 45}}>
-                        {renderTableItems(imageDict, gf, sgf)}
+                        {renderTableItems(imageDict, R.graphFilter, sr)}
                     </div>
                 )}
                 {(isOpen === 'other') &&(
                     <div className="checkbox-grid" style = {{height: Math.ceil(Object.keys(otherImageDict).length / 4) * 45}}>
-                        {renderTableItems(otherImageDict, ogf, sogf)}
+                        {renderTableItems(otherImageDict, oR.graphFilter, sor)}
                     </div>
                 )}
             </div>

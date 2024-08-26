@@ -1,18 +1,25 @@
 import React, { useState, useEffect} from 'react';
 import './dropdown.css';
 
-function Dropdown({name, options, onSelectValue, getIcon, initialOption, setOtherOpen}) {
+function Dropdown({name, options, onSelectValue, getIcon, initialOption, alternateOption}) {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState(null);
 
     useEffect(() => {
         setSelectedOption(null);
         onSelectValue(null);
-        if (initialOption) {
-            const initial = options.find(option => option.optID === initialOption);
-            if(initial) {
-                setSelectedOption(initial);
-                onSelectValue(initial.value);
+        const initial = options.find(option => option.optID === initialOption);
+        if(initial) {
+            setSelectedOption(initial);
+            onSelectValue(initial.value);
+        } else {
+            const alternate = options.find(option => option.optID === alternateOption);
+            if(alternate) {
+                setSelectedOption(alternate);
+                onSelectValue(alternate.value);
+            } else{
+                setSelectedOption(null);
+                onSelectValue(null);
             }
         }
     }, [options]);

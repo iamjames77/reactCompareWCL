@@ -3,12 +3,12 @@ import { get_hostility_event_data } from './get_api_data';
 import './castBar.css';
 import RenderIcon from './RenderIcon';
 
-function BossCastTimeLine({reportID, fight, startTime, endTime, SetError, enemyCastTable, enemyCastFilter, chartLeft, chartInterval, chartRight, chartWidth, IDDict}) {
+function BossCastTimeLine({report, SetError, chartLeft, chartInterval, chartRight, chartWidth}) {
     const [enemyCast, setEnemyCast] = useState({});
 
     const getHostilityEventData = async (id, nT) => {
         const fetchEventData = async (id, nT) => {
-            const data = await get_hostility_event_data(reportID, fight, id, nT, endTime);
+            const data = await get_hostility_event_data(report.reportID, report.fight, id, nT, report.endTime);
             if (data.errors) {
                 console.log('28');
                 SetError(data.errors[0].message);
@@ -30,11 +30,11 @@ function BossCastTimeLine({reportID, fight, startTime, endTime, SetError, enemyC
     useEffect(() => {
         const getEventData = async () => {
             const events = {};
-            if(enemyCastTable){
+            if(report.enemyCastTable){
                 const fetchEventData = async(ect) => {
                     const promises = Object.entries(ect).map(async ([id, castTable]) => {
                         if(castTable.visibility){
-                            const event = await getHostilityEventData(Number(id), startTime);
+                            const event = await getHostilityEventData(Number(id), report.startTime);
                             events[id] = event.map(e => ({
                                 ...e,
                                 name : castTable.cast[e.abilityGameID]?.name,
@@ -45,29 +45,29 @@ function BossCastTimeLine({reportID, fight, startTime, endTime, SetError, enemyC
                     });
                     await Promise.all(promises);
                 };
-                await fetchEventData(enemyCastTable);
+                await fetchEventData(report.enemyCastTable);
                 setEnemyCast(events);
             }
         };
         getEventData();
-    },[enemyCastTable]);
+    },[report.enemyCastTable]);
 
     return (
         <div>
             {
             (Object.getOwnPropertyNames(enemyCast).length > 0) && Object.entries(enemyCast).map(([id, enemy]) => (
-                enemyCastFilter[id] && (
+                report.enemyCastFilter[id] && (
                 <RenderIcon 
                     sc={enemy} 
-                    scf={enemyCastFilter[id]} 
-                    Name={IDDict[id]}
+                    scf={report.enemyCastFilter[id]} 
+                    Name={report.IDDict[id]}
                     chartWidth={chartWidth} 
                     chartLeft={chartLeft} 
                     chartRight={chartRight} 
                     chartInterval={chartInterval} 
-                    startTime={startTime}
-                    endTime={endTime}
-                    IDDict={IDDict}
+                    startTime={report.startTime}
+                    endTime={report.endTime}
+                    IDDict={report.IDDict}
                 />
                 )
             ))

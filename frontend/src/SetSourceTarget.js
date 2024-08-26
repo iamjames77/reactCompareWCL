@@ -3,30 +3,20 @@ import Dropdown from './dropdown';
 import {get_player_data, getKeyOptions} from './get_api_data';
 import specIconURL from './specIconURL';
 
-function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID, SetSourceName, SetSpec, type, friendlyNPC, enemyNPC,masterNPCs, existOnly,
-    setIDDict, initialSID, initialTID
-}) {
+function SetSourceTarget({report, SetError, setReport, type, existOnly}) {
     const [sourceIDOptions, setSourceIDOptions] = useState(null);
     const [targetIDOptions, setTargetIDOptions] = useState(null);
-    const [initialSourceID, setInitialSourceID] = useState(null);
-    const [initialTargetID, setInitialTargetID] = useState(null);
+    const [alternateTargetID, setAlternateTargetID] = useState(null);
 
     useEffect(() => {
-        if(fightID){
+        if(report.fight){
             setSourceOptions();
         }
-        else{
-            setSourceIDOptions(null);
-            setTargetIDOptions(null);
-            SetSourceID(null);
-            SetTargetID(null);
-            SetError('');
-        }
-    }, [ReportID, fightID]);
+    }, [report.reportID, report.fight]);
 
     const setSourceOptions = async () => {
-        if(ReportID && fightID){
-            const data = await get_player_data(ReportID, fightID)
+        if(report.reportID && report.fight){
+            const data = await get_player_data(report.reportID, report.fight);
             if (data.errors) {
                 console.log('28')
                 SetError(data.errors[0].message);
@@ -65,9 +55,6 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
             }
             setSourceIDOptions([AllOption, ...sourceOptionList]);
             SetError('');
-            if(initialSID){
-                setInitialSourceID(Number(initialSID));
-            }
         }
         else{
             setSourceIDOptions(null);
@@ -84,31 +71,39 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
                         specIconList[item.text] = item.imageURL;
                     }
                 })
-                SetSourceID('ALL');
-                SetSourceName(specIconList);
-                SetSpec('ALL');
+                setReport(prevState => ({
+                    ...prevState,
+                    source: 'ALL',
+                    sourceName: specIconList,
+                    class: 'ALL',
+                    spec: 'ALL',
+                }));
                 return;
             }
-            SetSourceID(selectedSource.id);
-            SetSourceName(selectedSource.name);
-            SetSpec({'class': selectedSource.type, 'spec': selectedSource.specs[0].spec});
+            setReport(prevState => ({
+                ...prevState,
+                source: selectedSource.id,
+                sourceName: selectedSource.name,
+                class: selectedSource.type,
+                spec: selectedSource.specs[0].spec,
+            }));
         }
     }
 
 
     useEffect(()=>{
-        if (sourceIDOptions && masterNPCs && friendlyNPC && enemyNPC){
+        if (sourceIDOptions && report.masterNPCs && report.friendlyNPCs && report.enemyNPCs){
             const friendlyList = sourceIDOptions
-            const npcList = friendlyNPC.map(item => {
-                const npcINFO = masterNPCs.find(npc => npc.gameID === item.gameID);
+            const npcList = report.friendlyNPCs.map(item => {
+                const npcINFO = report.masterNPCs.find(npc => npc.gameID === item.gameID);
                 return {
                     value: {id: item.id},
                     text: npcINFO.name,
                 }
             });
             friendlyList.push(...npcList);
-            const enemyList = enemyNPC.map(item => {
-                const npcINFO = masterNPCs.find(npc => npc.gameID === item.gameID);
+            const enemyList = report.enemyNPCs.map(item => {
+                const npcINFO = report.masterNPCs.find(npc => npc.gameID === item.gameID);
                 return {
                     value: {id: item.id},
                     text: npcINFO.name,
@@ -136,26 +131,30 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
             enemyList.forEach(item => {
                 dict[item.value.id] = item.text;
             });
-            setIDDict(dict);
+            setReport(prevState => ({
+                ...prevState,
+                IDDict: dict,
+            }));
         }
         else{
             setTargetIDOptions(null);
         }
-        setInitialTargetID('ALL');
-    }, [type, friendlyNPC, enemyNPC,sourceIDOptions, masterNPCs])
+        setAlternateTargetID('ALL');
+    }, [type, report.friendlyNPCs, report.enemyNPCs, report.masterNPCs, sourceIDOptions]);
 
     const setTargetHandler = (selectedTarget) => {
         if(selectedTarget){
             if(selectedTarget === 'ALL'){
-                SetTargetID('ALL');
+                setReport(prevState => ({
+                    ...prevState,
+                    target: 'ALL',
+                }));
                 return;
             }
-            const selectedTargetJson = selectedTarget;
-            if(initialTID){
-                setInitialTargetID(Number(initialTID));
-            } else {
-                setInitialTargetID(selectedTargetJson.id);
-            }
+            setReport(prevState => ({
+                ...prevState,
+                target: selectedTarget.id,
+            }));
         }
     }
 
@@ -174,12 +173,12 @@ function SetSourceTarget({ReportID, fightID, SetError, SetSourceID, SetTargetID,
         <div style = {selectStyle}>
             {sourceIDOptions && targetIDOptions && (
                 <div style={{...dropdownStyle, marginRight: existOnly? '6px' : '3px'}}>
-                    <Dropdown name='source' options={sourceIDOptions} onSelectValue={setSourceHandler} initialOption={initialSourceID} getIcon={true}/>
+                    <Dropdown name='source' options={sourceIDOptions} onSelectValue={setSourceHandler} initialOption={Number(report.source)} getIcon={true}/>
                 </div>
             )}
             {targetIDOptions && sourceIDOptions && (
                 <div style={{...dropdownStyle, marginLeft: existOnly? '6px': '3px'}}>
-                    <Dropdown name='target' options={targetIDOptions} onSelectValue={setTargetHandler} initialOption={initialTargetID} getIcon={true}/>
+                    <Dropdown name='target' options={targetIDOptions} onSelectValue={setTargetHandler} initialOption={Number(report.target)} alternateOption={alternateTargetID} getIcon={true}/>
                 </div>
             )}
       </div>

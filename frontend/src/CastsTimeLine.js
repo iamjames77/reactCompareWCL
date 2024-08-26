@@ -4,12 +4,12 @@ import './castBar.css';
 import RenderIcon from './RenderIcon';
 import { color } from 'highcharts';
 
-function CastsTimeLine({reportID, fight, startTime, endTime, SetError, sourceID, table, filter, chartLeft, chartInterval, chartRight, chartWidth, IDDict}) {
+function CastsTimeLine({report, SetError, chartLeft, chartInterval, chartRight, chartWidth}) {
     const [data, setData] = useState({});
 
     const getCastData = async (id, nT) => {
         const fetchEventData = async (id, nT) => {
-            const data = await get_casts_event_data(reportID, fight, id, nT, endTime);
+            const data = await get_casts_event_data(report.reportID, report.fight, id, nT, report.endTime);
             if (data.errors) {
                 console.log('28');
                 SetError(data.errors[0].message);
@@ -30,16 +30,16 @@ function CastsTimeLine({reportID, fight, startTime, endTime, SetError, sourceID,
 
     useEffect(() => {
         const get_event_data = async () => {
-            if(sourceID && Object.keys(table).length > 0){
+            if(report.source && Object.keys(report.castTable).length > 0){
                 const fetchEventData = async(id) => {
-                    const event = await getCastData(id, startTime);
+                    const event = await getCastData(id, report.startTime);
                     const result = event.map(e => {
-                        if(table[e.abilityGameID]){
+                        if(report.castTable[e.abilityGameID]){
                             return{
                             ...e,
-                            name : table[e.abilityGameID]?.name,
-                            icon : table[e.abilityGameID]?.abilityIcon,
-                            color : table[e.abilityGameID]?.iconColor,
+                            name : report.castTable[e.abilityGameID]?.name,
+                            icon : report.castTable[e.abilityGameID]?.abilityIcon,
+                            color : report.castTable[e.abilityGameID]?.iconColor,
                             }
                         }
                         else {
@@ -53,12 +53,14 @@ function CastsTimeLine({reportID, fight, startTime, endTime, SetError, sourceID,
                     });
                     return result;
                 }
-                const events = await fetchEventData(sourceID);
-                setData(events);
+                if(report.source !== 'ALL'){
+                    const events = await fetchEventData(report.source);
+                    setData(events);
+                }
             }
         }
         get_event_data();
-    },[sourceID]);
+    },[report.source]);
 
     return (
         <div>
@@ -66,15 +68,15 @@ function CastsTimeLine({reportID, fight, startTime, endTime, SetError, sourceID,
             (Object.keys(data).length > 0) && (
                 <RenderIcon 
                     sc={data}
-                    scf={filter}
-                    Name={IDDict[sourceID]}
+                    scf={report.castFilter}
+                    Name={report.IDDict[report.source]}
                     chartLeft={chartLeft}
                     chartInterval={chartInterval}
                     chartRight={chartRight}
                     chartWidth={chartWidth}
-                    startTime={startTime}
-                    endTime={endTime}
-                    IDDict={IDDict}
+                    startTime={report.startTime}
+                    endTime={report.endTime}
+                    IDDict={report.IDDict}
                 />
                 )
             }

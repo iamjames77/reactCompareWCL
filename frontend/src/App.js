@@ -19,35 +19,18 @@ function App() {
   const [inputOtherValue, setInputOtherValue] = useState('');
   const [notRenderGraph, setNotRenderGraph] = useState(false);
 
-  const [reportID, setReportID] = useState(null);
-  const [otherReportID, setOtherReportID] = useState(null);
+  const initialstate = {
+    reportID: null, 
+    encounterID:null, type: null, masterAbilities: null, masterNPCs: null,
+    fight: null,  fightIDOptions:null, 
+    source: null, target: null,  phase: null
+  }
 
-  const [name, setName] = useState(null);
-  const [fight, setFight] = useState(null);
-  const [otherFight, setOtherFight] = useState(null);
-  const [fightIDoptions, setFightIDoptions] = useState(null);
-  const [otherFightIDoptions, setOtherFightIDoptions] = useState(null);
+  const [report, setReport] = useState({});
+  const [otherReport, setOtherReport] = useState({});
   const [type, setType] = useState(null);
-  const [sourceID, setSourceID] = useState(null);
-  const [sourceName, setSourceName] = useState(null);
-  const [spec, setSpec] = useState(null);
-  const [targetID, setTargetID] = useState(null);
-  const [otherTargetID, setOtherTargetID] = useState(null);
-  const [otherSourceID, setOtherSourceID] = useState(null);
-  const [otherSourceName, setOtherSourceName] = useState(null);
-  const [otherSpec, setOtherSpec] = useState(null);
-  const [graphData, setGraphData] = useState(null);
-  const [graphFilter, setGraphFilter] = useState({});
-  const [otherGraphData, setOtherGraphData] = useState(null);
-  const [otherGraphFilter, setOtherGraphFilter] = useState({});
+  const [encounterID, setEncounterID] = useState(null);
   const [error, setError] = useState('');
-  const [startTime, setStartTime] = useState(null);
-  const [endTime, setEndTime] = useState(null);
-  const [otherStartTime, setOtherStartTime] = useState(null);
-  const [otherEndTime, setOtherEndTime] = useState(null);
-
-  const [resource, setResource] = useState(null);
-  const [otherResource, setOtherResource] = useState(null);
 
   const [timeLength, setTimeLength] = useState(null);
   const [chartInterval, setChartInterval] = useState(100);
@@ -55,41 +38,12 @@ function App() {
   const [chartRight, setChartRight] = useState(20);
   const [chartWidth, setChartWidth] = useState(null);
 
-  const [masterAbilities, setMasterAbilities] = useState(null);
-  const [masterNPCs, setMasterNPCs] = useState(null);
-  const [otherMasterAbilities, setOtherMasterAbilities] = useState(null);
-  const [otherMasterNPCs, setOtherMasterNPCs] = useState(null);
-  const [friendlyNPCs, setFriendlyNPCs] = useState(null);
-  const [enemyNPCs, setEnemyNPCs] = useState(null);
-  const [otherFriendlyNPCs, setOtherFriendlyNPCs] = useState(null);
-  const [otherEnemyNPCs, setOtherEnemyNPCs] = useState(null);
-  const [IDDict, setIDDict] = useState(null);
-  const [otherIDDict, setOtherIDDict] = useState(null);
-  const [buffTable, setBuffTable] = useState(null);
-  const [otherBuffTable, setOtherBuffTable] = useState(null);
-  const [globalBuffTable, setGlobalBuffTable] = useState(null);
-  const [otherGlobalBuffTable, setOtherGlobalBuffTable] = useState(null);
-  const [castTable, setCastTable] = useState(null);
-  const [otherCastTable, setOtherCastTable] = useState(null);
-
-  const [castFilter, setCastFilter] = useState({});
-  const [otherCastFilter, setOtherCastFilter] = useState({});
-  const [buffFilter, setBuffFilter] = useState({});
-  const [otherBuffFilter, setOtherBuffFilter] = useState({});
   const [enemyCastTable, setEnemyCastTable] = useState({});
   const [otherEnemyCastTable, setOtherEnemyCastTable] = useState({});
   const [enemyCastFilter, setEnemyCastFilter] = useState(null);
   const [otherEnemyCastFilter, setOtherEnemyCastFilter] = useState(null);
 
-  const [initialFight, setInitialFight] = useState(null);
-  const [initialOtherFight, setInitialOtherFight] = useState(null);
-  const [initialSource, setInitialSource] = useState(null);
-  const [initialOtherSource, setInitialOtherSource] = useState(null);
-  const [initialTarget, setInitialTarget] = useState(null);
-  const [initialOtherTarget, setInitialOtherTarget] = useState(null);
-  const [initialType, setInitialType] = useState(null);
-  const [initialPhase, setInitialPhase] = useState(null);
-  const [initialOtherPhase, setInitialOtherPhase] = useState(null);
+
 
   // 입력 변경 시
   const myInputChange = (event) => {
@@ -104,7 +58,7 @@ function App() {
     setNotRenderGraph(event.target.checked);
   }
 
-  function parseWarcraftLogsInput(input,sR, iF, iS, iT, iTy, iPh) {
+  function parseWarcraftLogsInput(input, sR, sT) {
     let reportId = null;
     let fight = null;
     let source = null;
@@ -154,36 +108,49 @@ function App() {
             reportId = input;
         }
     }
-
-    console.log(reportId, fight, source, target, type, phase);
-    sR(reportId);
-    iF(fight);
-    iS(source);
-    iT(target);
-    if(iTy) iTy(type);
-    iPh(phase);
+    
+    if(type === 'healing'){
+      type = 'Healing';
+    } else {
+      type = 'DamageDone';
+    }
+    sR(prevState => ({
+      ...prevState,
+      reportID: reportId,
+      fight: Number(fight),
+      source: source,
+      target: target,
+      initialphase: phase
+    }));
+    if(sT){
+      sT(type);
+    }
   }
 
   // URL 입력 후 버튼 클릭 시
   const handleSubmit = () => {
-    parseWarcraftLogsInput(inputMyValue, setReportID, setInitialFight, setInitialSource, setInitialTarget, setInitialType, setInitialPhase);
-    parseWarcraftLogsInput(inputOtherValue, setOtherReportID, setInitialOtherFight, setInitialOtherSource, setInitialOtherTarget, null, setInitialOtherPhase);
+    parseWarcraftLogsInput(inputMyValue, setReport, setType);
+    parseWarcraftLogsInput(inputOtherValue, setOtherReport);
+    setEncounterID(null);
   };
 
   useEffect(() => {
-    if (name && otherReportID) {
-      API.get_fight_data_with_encounterID(otherReportID, name).then(data => {
+    if (encounterID && otherReport.reportID) {
+      API.get_fight_data_with_encounterID(otherReport.reportID, encounterID).then(data => {
         if (data.errors) {
           console.log('90');
           setError(data.errors[0].message);
           return;
         }
-        setOtherFightIDoptions(data.data.reportData.report.fights);
+        setOtherReport(prevState => ({
+          ...prevState,
+          fightIDOptions: data.data.reportData.report.fights
+        }));
     });
   }
-  }, [name, otherReportID]);
-
-  const getGraphData = async (r, f, s, t, ty, sT, eT, sN, sG, sF) => {
+  }, [encounterID, otherReport.reportID]);
+  // graph Data
+  const getGraphData = async (r, f, s, t, ty, sT, eT, sN, sR) => {
     const fetch = async (r, f, s, t, ty, sT, eT) => {
       const data = await API.get_graph_data(r, f, s, t, ty, sT, eT);
       if (data.errors) {
@@ -213,11 +180,17 @@ function App() {
       }
       return {result, gf};
     }
-    sG((await fetchResult(r, f, s, t, ty, sT, eT, sN)).result);
-    sF((await fetchResult(r, f, s, t, ty, sT, eT, sN)).gf);
+    const gD = (await fetchResult(r, f, s, t, ty, sT, eT, sN)).result;
+    const gF = (await fetchResult(r, f, s, t, ty, sT, eT, sN)).gf;
+    sR(prevState => ({
+      ...prevState,
+      graphData: gD,
+      graphFilter: gF
+    })
+    )
   }
-
-  const getTableData = (r, f, s, t, ty,sT, eT, sB, sgB, sC) => {
+  // Table Data
+  const getTableData = (r, f, s, t, ty,sT, eT, sR) => {
     API.get_table_data(r, f, s, t, ty,sT, eT).then(async data => {
       if (data.errors) {
         console.log('123');
@@ -227,12 +200,17 @@ function App() {
       const sort_sB = await addColor(data.data.reportData.report.self.data.auras.sort((a,b) => a.guid - b.guid));
       const sort_sgB = await addColor(data.data.reportData.report.global.data.auras.sort((a,b) => a.guid - b.guid));
       const sort_sC = await addColor(data.data.reportData.report.cast.data.entries.sort((a,b) => a.guid - b.guid));
-      sB(sort_sB);
-      sgB(sort_sgB);
-      sC(sort_sC);
+      sR(prevState => ({
+        ...prevState,
+        buffTable: sort_sB,
+        globalBuffTable: sort_sgB,
+        buffFilter: {},
+        castTable: sort_sC,
+        castFilter: {}
+      }));
     })
   };
-
+  // Add Color
   const addColor = async (data) => {
     const D = {};
     const promises = Object.values(data).map( async (ability) => {
@@ -246,7 +224,7 @@ function App() {
     await Promise.all(promises);
     return D;
   }
-
+  // Resource Data
   const getResourceData = (r, f, s, sp, sT, eT,dt, bT, n, sR) => {
     API.get_resource_data(r, f, s, sp, sT, eT, dt, bT).then(data => {
       if (data.errors) {
@@ -274,6 +252,40 @@ function App() {
       }));
     });
   };
+  // Master Data
+  const getMasterData = (r, sR) => {
+    API.get_master_data(r).then(data => {
+      if(data.errors){
+        console.log(data.errors[0].message);
+        return;
+      }
+      sR(prevState => ({
+        ...prevState,
+        masterAbilities: data.data.reportData.report.masterData.abilities,
+        masterNPCs: data.data.reportData.report.masterData.npc
+      }));
+    });
+  };
+
+  const getNPCdata = async (r, f, sR) => {
+    const eD = await API.get_enemy_data(r, f);
+    if (eD.errors) {
+      console.log('222');
+      setError(eD.errors[0].message);
+      return;
+    }
+    const fD = await API.get_friendly_data(r, f);
+    if (fD.errors) {
+      console.log('230');
+      setError(fD.errors[0].message);
+      return;
+    }
+    sR(prevState => ({
+      ...prevState,
+      enemyNPCs: eD.data.reportData.report.fights[0].enemyNPCs,
+      friendlyNPCs: fD.data.reportData.report.fights[0].friendlyNPCs
+    }));
+  }
 
   const handleRefresh = () => {
     window.location.reload();
@@ -281,244 +293,122 @@ function App() {
   
   // Master Data
   useEffect(() => {
-    if(reportID){
-      API.get_master_data(reportID).then(data => {
-        if (data.errors) {
-          console.log(data.errors[0].message);
-          setReportID(null);
-          return;
-        }
-        setMasterAbilities(data.data.reportData.report.masterData.abilities)
-        setMasterNPCs(data.data.reportData.report.masterData.npc);
-        setReportLang(data.data.reportData.report.lang)
-      });
+    if(report.reportID){
+      getMasterData(report.reportID, setReport);
     }
-  }, [reportID]);
+  }, [report.reportID]);
+
+  // Get NPC data
+  useEffect(() => {
+    if (report.fight){
+      getNPCdata(report.reportID, report.fight, setReport);
+    }
+  }, [report.fight]);
 
   // Other Master Data
   useEffect(() => {
-    if(otherReportID){
-      API.get_master_data(otherReportID).then(data => {
-        if (data.errors) {
-          console.log(data.errors[0].message);
-          setOtherReportID(null);
-          return;
-        }
-        setOtherMasterAbilities(data.data.reportData.report.masterData.abilities)
-        setOtherMasterNPCs(data.data.reportData.report.masterData.npc);
-        setOtherReportLang(data.data.reportData.report.lang)
-      });
+    if(otherReport.reportID){
+      getMasterData(otherReport.reportID, setOtherReport);
     }
-  }, [otherReportID]);
+  }, [otherReport.reportID]);
 
+  // Other NPC Data
   useEffect(() => {
-    setFightIDoptions(null);
-    setMasterNPCs(null);
-  }, [reportID])
-
-  useEffect(() => {
-    setOtherFightIDoptions(null);
-    setOtherMasterNPCs(null);
-  }, [otherReportID])
-
-  useEffect(() => {
-    setFight(null);
-    setStartTime(null);
-    setEndTime(null);
-  }, [fightIDoptions]);
-
-  useEffect(() => {
-    setOtherFight(null);
-    setOtherStartTime(null);
-    setOtherEndTime(null);
-  }, [otherFightIDoptions]);
-
-  useEffect(() => {
-    setSourceID(null);
-    setTargetID(null);
-    setIDDict(null);
-    setEnemyCastTable({});
-    if(fight){
-      setInitialFight(null);
+    if (otherReport.fight){
+      getNPCdata(otherReport.reportID, otherReport.fight, setOtherReport);
     }
-  }, [fight]);
-
-  useEffect(() => {
-    setOtherSourceID(null);
-    setOtherTargetID(null);
-    setOtherIDDict(null);
-    setOtherEnemyCastTable({});
-    if(otherFight){
-      setInitialOtherFight(null);
-    }
-  }, [otherFight]);
-
-  useEffect(() => {
-    setCastFilter({});
-    setCastTable(null);
-    setBuffFilter({});
-    setBuffTable(null);
-    if(sourceID){
-      setInitialSource(null);
-    }
-    console.log(sourceID);
-    console.log(initialSource);
-  }, [sourceID]);
-
-  useEffect(() => {
-    setOtherCastFilter({});
-    setOtherCastTable(null);
-    setOtherBuffFilter({});
-    setOtherBuffTable(null);
-    if(otherSourceID){
-      setInitialOtherSource(null);
-    }
-  },[otherSourceID]);
-
-  useEffect(() => {
-    if(targetID){
-      setInitialTarget(null);
-    }
-  }, [targetID]);
-
-  useEffect(() => {
-    if(otherTargetID){
-      setInitialOtherTarget(null);
-    }
-  }, [otherTargetID]);
+  }, [otherReport.fight]);
   
   // Graph Data
   useEffect(() => {    
-    if (reportID && fight && sourceID && targetID && type && startTime && endTime && !notRenderGraph){
-      getGraphData(reportID, fight, sourceID, targetID, type, startTime, endTime, sourceName, setGraphData, setGraphFilter);
+    if (report.reportID && report.fight && report.source && report.target && type && report.startTime && report.endTime && !notRenderGraph){
+      getGraphData(report.reportID, report.fight, report.source, report.target, type, report.startTime, report.endTime, report.sourceName, setReport);
     }
     else{
-      setGraphData(null);
+      setReport(prevState => ({
+        ...prevState,
+        graphData: null
+      }));
     }
-  }, [startTime, endTime, sourceID, targetID, notRenderGraph, type]);
+  }, [report.startTime, report.endTime, report.source, report.target, notRenderGraph, type]);
 
   // Other Graph Data
   useEffect(() => {
-    if (otherReportID && otherFight && otherSourceID && otherTargetID && otherStartTime && otherEndTime && !notRenderGraph){
-      getGraphData(otherReportID, otherFight, otherSourceID, otherTargetID, type, otherStartTime, otherEndTime, otherSourceName, setOtherGraphData, setOtherGraphFilter);
+    if (otherReport.reportID && otherReport.fight && otherReport.source && otherReport.target && otherReport.startTime && otherReport.endTime && !notRenderGraph){
+      getGraphData(otherReport.reportID, otherReport.fight, otherReport.source, otherReport.target, type, otherReport.startTime, otherReport.endTime, otherReport.sourceName, setOtherReport);
     }
     else{
-      setOtherGraphData(null);
+      setOtherReport(prevState => ({
+        ...prevState,
+        graphData: null
+      }));
     }
-  }, [otherStartTime, otherEndTime, otherSourceID, otherTargetID, notRenderGraph, type]);
+  }, [otherReport.startTIme, otherReport.endTime, otherReport.source, otherReport.target, notRenderGraph, type]);
 
   // Resource Data
   useEffect(() => {
-    if (reportID && fight && sourceID && startTime && endTime && spec && sourceID !== 'ALL') {
-      specResource[spec.class][spec.spec].forEach(item => {
+    if (report.reportID && report.fight && report.source && report.startTime && report.endTime && report.spec && report.source !== 'ALL') {
+      specResource[report.class][report.spec].forEach(item => {
         const dtype = item.type;
         const spell = item.spell;
         const name = item.name;
         const byTarget = item.byTarget;
-        getResourceData(reportID, fight, sourceID, spell, startTime, endTime, dtype, byTarget, name, setResource);
+        getResourceData(report.reportID, report.fight, report.source, spell, report.startTime, report.endTime, dtype, byTarget, name, setReport);
       });
     }
-  }, [sourceID, startTime, endTime, spec]);
+  }, [report.source, report.startTime, report.endTime, report.class, report.spec]);
   // Resource Data
   useEffect(() => {
-    if (otherReportID && otherFight && otherSourceID && otherStartTime && otherEndTime && otherSpec) {
-      specResource[otherSpec.class][otherSpec.spec].forEach(item => {
+    if (otherReport.reportID && otherReport.fight && otherReport.source && otherReport.startTime && otherReport.endTime && otherReport.spec && otherReport.source !== 'ALL') {
+      specResource[otherReport.class][otherReport.spec].forEach(item => {
         const dtype = item.type;
         const spell = item.spell;
         const name = item.name;
         const byTarget = item.byTarget;
-        getResourceData(otherReportID, otherFight, otherSourceID, spell, otherStartTime, otherEndTime, dtype, byTarget, name, setOtherResource);
+        getResourceData(otherReport.reportID, otherReport.fight, otherReport.source, spell, otherReport.startTime, otherReport.endTime, dtype, byTarget, name, setOtherReport);
       });
     }
-  }, [otherSourceID, otherStartTime, otherEndTime, otherSpec]);
+  }, [otherReport.source, otherReport.startTime, otherReport.endTime, otherReport.class, otherReport.spec]);
 
   //set Time Length
   useEffect(() => {
-    if (startTime && endTime){
-      let time = endTime - startTime;
-      if (otherStartTime && otherEndTime){
-        time = otherEndTime - otherStartTime > time ? otherEndTime - otherStartTime : time;
+    if (report.startTime && report.endTime){
+      let time = report.endTime - report.startTime;
+      if (otherReport.startTime && otherReport.endTime){
+        time = otherReport.endTime - otherReport.startTime > time ? otherReport.endTime - otherReport.startTime : time;
       }
       time = Math.ceil(time/1000) * 1000;
       setTimeLength(time);
       setChartWidth(time / 10);
     }
-  }, [startTime, endTime, otherStartTime, otherEndTime]);
-
-  // Get NPC data
-  useEffect(() => {
-    if (fight && startTime && endTime) {
-      API.get_enemy_data(reportID, fight).then(data => {
-        if (data.errors) {
-          console.log('263');
-          setError(data.errors[0].message);
-          return;
-        }
-        setEnemyNPCs(data.data.reportData.report.fights[0].enemyNPCs);
-      })
-      API.get_friendly_data(reportID, fight).then(data => {
-        if (data.errors) {
-          console.log('271');
-          setError(data.errors[0].message);
-          return;
-        }
-        setFriendlyNPCs(data.data.reportData.report.fights[0].friendlyNPCs);
-      })
-    }
-    setInitialPhase(null);
-  }, [startTime, endTime]);
-
-  // Get Other NPC data
-  useEffect(() => {
-    if (otherFight && otherStartTime && otherEndTime) {
-      API.get_enemy_data(otherReportID, otherFight).then(data => {
-        if (data.errors) {
-          console.log('285');
-          setError(data.errors[0].message);
-          return;
-        }
-        setOtherEnemyNPCs(data.data.reportData.report.fights[0].enemyNPCs);
-      })
-      API.get_friendly_data(otherReportID, otherFight).then(data => {
-        if (data.errors) {
-          console.log('293');
-          setError(data.errors[0].message);
-          return;
-        }
-        setOtherFriendlyNPCs(data.data.reportData.report.fights[0].friendlyNPCs);
-      })
-    }
-    setInitialOtherPhase(null);
-  }, [otherStartTime, otherEndTime]);
+  }, [report.startTime, report.endTime, otherReport.startTime, otherReport.endTime]);
 
   // Get Table Data
   useEffect(() => {
-    if (fight && startTime && endTime && sourceID && (sourceID !== 'ALL')) {
-      getTableData(reportID, fight, sourceID, sourceID, type, startTime, endTime, setBuffTable, setGlobalBuffTable, setCastTable);
+    if (report.fight && report.startTime && report.endTime && report.source && (report.source !== 'ALL')) {
+      getTableData(report.reportID, report.fight, report.source, report.source, type, report.startTime, report.endTime, setReport);
     }
-    else if ((sourceID === 'ALL')){
-      setBuffTable(null);
-      setGlobalBuffTable(null);
-      setCastTable(null);
-    }
-  }, [startTime, endTime, sourceID, type]);
+  }, [report.startTime, report.endTime, report.source, type]);
 
   // Get Other Table Data
   useEffect(() => {
-    if (otherFight && otherStartTime && otherEndTime && otherSourceID && (otherSourceID !== 'ALL')) {
-      getTableData(otherReportID, otherFight, otherSourceID, otherSourceID, type,otherStartTime, otherEndTime, setOtherBuffTable, setOtherGlobalBuffTable, setOtherCastTable);
+    if (otherReport.fight && otherReport.startTime && otherReport.endTime && otherReport.source && (otherReport.source !== 'ALL')) {
+      getTableData(otherReport.reportID, otherReport.fight, otherReport.source, otherReport.source, type, otherReport.startTime, otherReport.endTime, setOtherReport);
     }
-    else {
-      setOtherBuffTable(null);
-      setOtherGlobalBuffTable(null);
-      setOtherCastTable({});
-    }
-  }, [otherStartTime, otherEndTime, otherSourceID, type]);
+  }, [otherReport.startTime, otherReport.endTime, otherReport.source, type]);
 
   useEffect(() => {
     console.log('tbfZN6Jxjycq9D8v');
     console.log('JAjWZM1xHPyVd8g9');
   }, []);
+
+  useEffect(() => {
+    console.log(report)
+  }, [report]);
+
+  useEffect(() => {
+    console.log(otherReport)
+  }, [otherReport]);
 
   return (
     <div className="App">
@@ -533,79 +423,65 @@ function App() {
       </div>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <div>
-        {reportID && (
-          <SetBossType ReportID={reportID} SetError={setError} SetName={setName} SetType={setType} SetFightIDOptions={setFightIDoptions} initialFight={initialFight} initialTy={initialType}/>
+        {report.reportID && (
+          <SetBossType report={report} SetError={setError} setReport={setReport} type={type} setType={setType} setEncounterID = {setEncounterID}/>
         )}
         <div style={{display:'flex'}}>
-          <div style={{width: otherFightIDoptions ? '50%' : '100%'}}>
-            {fightIDoptions && (
-              <SetFightPhase ReportID={reportID} SetError={setError} FightIDOptions={fightIDoptions} SetFightID={setFight} SetStartTime={setStartTime} SetEndTime={setEndTime} existOnly={!otherFightIDoptions} 
-              initialFight={initialFight} initialPhase={initialPhase}/>
+          <div style={{width: otherReport.reportID ? '50%' : '100%'}}>
+            {report.fightIDOptions && (
+              <SetFightPhase report={report} SetError={setError} setReport={setReport} existOnly={!otherReport.reportID} />
             )}
           </div>
-          <div style={{width: otherFightIDoptions ? '50%' : '0%'}}>
-            {otherFightIDoptions && (
-              <SetFightPhase ReportID={otherReportID} SetError={setError} FightIDOptions={otherFightIDoptions} SetFightID={setOtherFight} SetStartTime={setOtherStartTime} SetEndTime={setOtherEndTime} 
-              initialFight={initialOtherFight} initialPhase={initialOtherPhase}/>
+          <div style={{width: otherReport.reportID ? '50%' : '0%'}}>
+            {otherReport.fightIDOptions && (
+              <SetFightPhase report={otherReport} SetError={setError} setReport={setOtherReport} existOnly={!otherReport.reportID} />
             )}
-          </div>
+          </div>          
+        
         </div>
         <div style={{display:'flex'}}>
-          <div style={{width: otherFightIDoptions ? '50%' : '100%'}}>
-            {startTime && endTime && (
-              <SetSourceTarget ReportID={reportID} fightID={fight} SetError={setError} SetSourceID={setSourceID} SetSourceName={setSourceName} SetSpec={setSpec} type={type} initialSID={initialSource} initialTID={initialTarget}
-              friendlyNPC={friendlyNPCs} enemyNPC={enemyNPCs} masterNPCs={masterNPCs} SetTargetID={setTargetID} existOnly={!otherFightIDoptions} setIDDict={setIDDict}/>
+          
+          <div style={{width: otherReport.reportID ? '50%' : '100%'}}>
+            {report.startTime && report.endTime && (
+              <SetSourceTarget report={report} SetError={setError} setReport={setReport} type={type} existOnly={!otherReport.reportID}/>
             )}
           </div>
-          <div style={{width: otherFightIDoptions ? '50%' : '0%'}}>
-            {otherStartTime && otherEndTime && (
-              <SetSourceTarget ReportID={otherReportID} fightID={otherFight} SetError={setError} SetSourceID={setOtherSourceID} SetSourceName={setOtherSourceName} SetSpec={setOtherSpec} type ={type}
-              friendlyNPC={otherFriendlyNPCs} enemyNPC= {otherEnemyNPCs} masterNPCs={otherMasterNPCs} SetTargetID = {setOtherTargetID} setIDDict={setOtherIDDict} initialSID={initialOtherSource} initialTID={initialOtherTarget}/>
+          <div style={{width: otherReport.reportID ? '50%' : '0%'}}>
+            {otherReport.startTime && otherReport.endTime && (
+              <SetSourceTarget report={otherReport} SetError={setError} setReport={setOtherReport} type={type}/>
             )}
           </div>
         </div>
       </div>
-      <div className={`custom-horizontal-scrollbar ${graphData ? 'show' : 'hide'}`} style= {{overflowX: 'scroll', margin: 6}}>
-        {graphData && (
-          <ChartComponent gd={graphData} ogd={otherGraphData} type={type} gf ={graphFilter} ogf = {otherGraphFilter} sgf = {setGraphFilter} sogf = {setOtherGraphFilter}
-          timeLength= {timeLength} abilityTable={masterAbilities} otherAbilityTable={otherMasterAbilities}/>
+      <div className={`custom-horizontal-scrollbar ${report.graphData ? 'show' : 'hide'}`} style= {{overflowX: 'scroll', margin: 6}}>
+        {report.graphData && (
+          <ChartComponent R={report} oR={otherReport} type={type} sr={setReport} sor={setOtherReport}
+          timeLength= {timeLength} abilityTable={report.masterAbilities} otherAbilityTable={otherReport.masterAbilities}/>
         )}
-        {sourceID && enemyNPCs && (
-          <Checkboxdown reportID = {reportID} fight={fight} sourceID={sourceID} sourceName={sourceName} enemyNPCs ={enemyNPCs} 
-          buff={buffTable} globalBuff = {globalBuffTable} masterNPCs={masterNPCs} cast ={castTable}
-          otherReportID = {otherReportID} otherFight = {otherFight} otherSourceID = {otherSourceID} otherSourceName = {otherSourceName} otherEnemyNPCs={otherEnemyNPCs}
-          otherBuff = {otherBuffTable} otherGlobalBuff = {otherGlobalBuffTable} otherCast = {otherCastTable}
-          cf = {castFilter} scf = {setCastFilter} ocf = {otherCastFilter} socf={setOtherCastFilter}
-          bf={buffFilter}  sbf = {setBuffFilter} obf = {setOtherBuffFilter} sobf = {setOtherBuffFilter}
-          setEnemyCastTable = {setEnemyCastTable} SetEnemyCastFilter = {setEnemyCastFilter} setOtherEnemyCastTable = {setOtherEnemyCastTable} SetOtherEnemyCastFilter = {setOtherEnemyCastFilter}
-          startTime={startTime} endTime={endTime}/>
+        
+        {report.source && report.enemyNPCs && (
+          <Checkboxdown R = {report} oR = {otherReport} sR = {setReport} sOR = {setOtherReport}/>
         )}
-        {timeLength && chartInterval && chartLeft && sourceID && (
+        {timeLength && chartInterval && chartLeft && report.source && (
           <Scaling timeLength={timeLength} chartInterval={chartInterval} chartLeft={chartLeft} chartWidth = {chartWidth}/>
         )}
-        {chartLeft && sourceID && IDDict && (Object.keys(enemyCastTable).length > 0)  && (
-          <BossCastTimeLine reportID = {reportID} fight ={fight} startTime = {startTime} endTime = {endTime} enemyCastTable ={enemyCastTable} enemyCastFilter = {enemyCastFilter}
-          chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={IDDict}/>
+        {chartLeft && report.source && report.IDDict && report.enemyCastTable && (
+          <BossCastTimeLine report = {report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
-        {chartLeft && otherSourceID && otherIDDict && (Object.keys(otherEnemyCastTable).length > 0) && (
-          <BossCastTimeLine reportID = {otherReportID} fight ={otherFight} startTime = {otherStartTime} endTime = {otherEndTime} enemyCastTable={otherEnemyCastTable} enemyCastFilter = {otherEnemyCastFilter}
-          chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={otherIDDict}/>
+        {chartLeft && otherReport.source && otherReport.IDDict && report.otherEnemyCastTable && (
+          <BossCastTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
-        {chartLeft && sourceID && IDDict && buffFilter && globalBuffTable && (Object.keys(buffFilter).length > 0) &&(
-          <BuffsTimeLine reportID = {reportID} fight ={fight} startTime = {startTime} endTime = {endTime} table ={globalBuffTable} filter = {buffFilter} sourceID = {sourceID}
-          chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={IDDict}/>
+        {chartLeft && report.source && report.IDDict && report.buffFilter && report.globalBuffTable && (Object.keys(report.buffFilter).length > 0) &&(
+          <BuffsTimeLine report={report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
-        {chartLeft && sourceID && IDDict && otherBuffFilter && otherGlobalBuffTable && (Object.keys(buffFilter).length > 0) &&(
-          <BuffsTimeLine reportID = {otherReportID} fight ={otherFight} startTime = {otherStartTime} endTime = {otherEndTime} table ={otherGlobalBuffTable} filter = {otherBuffFilter} sourceID = {otherSourceID}
-          chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={otherIDDict}/>
+        {chartLeft && otherReport.source && otherReport.IDDict && otherReport.buffFilter && otherReport.globalBuffTable && (Object.keys(otherReport.buffFilter).length > 0) &&(
+          <BuffsTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
-        {chartLeft && sourceID && IDDict && castTable && (Object.keys(castFilter).length > 0) && (
-          <CastsTimeLine reportID = {reportID} fight ={fight} startTime = {startTime} endTime = {endTime} table ={castTable} filter = {castFilter} sourceID = {sourceID}
-          chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={IDDict}/>
+        {chartLeft && report.source && report.IDDict && report.castTable && (Object.keys(report.castFilter).length > 0) && (
+          <CastsTimeLine report = {report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
-        {chartLeft && otherSourceID && otherIDDict && otherCastTable&&(Object.keys(otherCastFilter).length > 0) && (
-          <CastsTimeLine reportID = {otherReportID} fight ={otherFight} startTime = {otherStartTime} endTime = {otherEndTime} table ={otherCastTable} filter = {otherCastFilter}
-          sourceID = {otherSourceID} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError} IDDict={otherIDDict}/>
+        {chartLeft && otherReport.source && otherReport.IDDict && otherReport.castTable&&(Object.keys(otherReport.CastFilter).length > 0) && (
+          <CastsTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
       </div>
     </div>

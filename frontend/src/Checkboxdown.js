@@ -2,11 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { get_hostility_table_data, getColorFromImage } from './get_api_data';
 import './dropdown.css';
 
-function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, masterNPCs, enemyNPCs, otherEnemyNPCs,buff, globalBuff, 
-    cast, otherBuff, otherGlobalBuff, otherCast,
-    cf, scf, ocf, socf, bf, sbf, obf, sobf,
-    setEnemyCastTable, setOtherEnemyCastTable, SetEnemyCastFilter, SetOtherEnemyCastFilter, startTime, endTime
-}) {
+function CheckBoxdown({R, oR, sR, sOR}) {
     const [openDropdown, setOpenDropdown] = useState(null);
     const [externalBuff, setExternalBuff] = useState({});
     const [otherExternalBuff, setOtherExternalBuff] = useState({});
@@ -19,18 +15,47 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         setOpenDropdown(openDropdown === dropdown ? null : dropdown);
     };
 
-    const handleCheckboxChange = (event, setCheckedItems, setOtherCheckedItems) => {
+    const handleBuffboxChange = (event, setReport, setOtherReport) => {
         const checkbox  = event.target;
         const isChecked = checkbox.checked;
         const itemID = Number(checkbox.id);
 
-        setCheckedItems(prevState => ({
+        setReport(prevState => ({
             ...prevState,
-            [itemID]: isChecked,
+            buffFilter: {
+                ...prevState.buffFilter,
+                [itemID]: isChecked,
+            },
         }));
-        setOtherCheckedItems(prevState => ({
+
+        setOtherReport(prevState => ({
             ...prevState,
-            [itemID]: isChecked,
+            buffFilter: {
+                ...prevState.buffFilter,
+                [itemID]: isChecked,
+            },
+        }));
+    };
+
+    const handleCastboxChange = (event, setReport, setOtherReport) => {
+        const checkbox  = event.target;
+        const isChecked = checkbox.checked;
+        const itemID = Number(checkbox.id);
+
+        setReport(prevState => ({
+            ...prevState,
+            castFilter: {
+                ...prevState.castFilter,
+                [itemID]: isChecked,
+            },
+        }));
+
+        setOtherReport(prevState => ({
+            ...prevState,
+            castFilter: {
+                ...prevState.castFilter,
+                [itemID]: isChecked,
+            },
         }));
     };
 
@@ -104,7 +129,7 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                 <div key={index} className="checkbox-item">
                     <input type="checkbox" id={index}
                     checked = {bF[index] || false}
-                    onChange={(e)=> handleCheckboxChange(e, sbf, sobf)}/>
+                    onChange={(e)=> handleBuffboxChange(e, sR, sOR)}/>
                     <a href ={'https://www.wowhead.com/spell=' + index} target="_blank" rel="noreferrer">
                         <img src={`https://wow.zamimg.com/images/wow/icons/large/${item.abilityIcon}`} alt="" className="dropdown-icon"/>
                     </a>
@@ -121,7 +146,7 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                 <div key={index} className="checkbox-item">
                     <input type="checkbox" id={index}
                     checked = {cF[Number(index)] || false}
-                    onChange={(e)=> handleCheckboxChange(e, scf, socf)}/>
+                    onChange={(e)=> handleCastboxChange(e, sR, sOR)}/>
                     <a href ={'https://www.wowhead.com/spell=' + index} target="_blank" rel="noreferrer">
                         <img src={`https://wow.zamimg.com/images/wow/icons/large/${item.abilityIcon}`} alt="" className="dropdown-icon"/>
                     </a>
@@ -135,13 +160,13 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
    //BOSS 타입인 경우 Check
     useEffect(() => {
         const fetchEnemyTable = async () => {
-            if(enemyNPCs && masterNPCs) {
+            if(R.enemyNPCs && R.masterNPCs) {
                 const ec = {};
                 const ecf = {};
-                const promises = enemyNPCs.map(async (enemy) => {
+                const promises = R.enemyNPCs.map(async (enemy) => {
                     if(!enemyCast[enemy.gameID]) {
-                        const data = await get_hostility_table_data(reportID, fight, enemy.id, startTime, endTime);
-                        const enemyINFO = masterNPCs.find((npc) => npc.gameID === enemy.gameID && npc.id === enemy.id)
+                        const data = await get_hostility_table_data(R.reportID, R.fight, enemy.id, R.startTime, R.endTime);
+                        const enemyINFO = R.masterNPCs.find((npc) => npc.gameID === enemy.gameID && npc.id === enemy.id)
                         const castData = data.data.reportData.report.table.data.entries
                         const cD = {};
                         Object.values(castData).forEach(async (ability) => {
@@ -181,112 +206,126 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
         };
 
         fetchEnemyTable();
-    }, [enemyNPCs, masterNPCs]);
+    }, [R.enemyNPCs, R.masterNPCs]);
 
     //enemy Cast table 적용
     useEffect(() => {
         if((Object.keys(enemyCast).length >0)) {
             const ec = {};
-            enemyNPCs.forEach((enemy) => {
+            R.enemyNPCs.forEach((enemy) => {
                 if(enemyCast[enemy.gameID] && enemyCast[enemy.gameID].visibility) {
                     ec[enemy.id] = enemyCast[enemy.gameID];
                 }
             });
-            setEnemyCastTable(ec);
+            sR(prevState => ({
+                ...prevState,
+                enemyCastTable: ec,
+            }));
         }
     }, [enemyCast]);
 
     //otherEnemy Cast table 적용
     useEffect(() => {
-        if((Object.keys(enemyCast).length >0) && otherEnemyNPCs){
+        if((Object.keys(enemyCast).length >0) && oR.enemyNPCs){
             const oec = {};
-            otherEnemyNPCs.forEach((enemy) => {
+            oR.enemyNPCs.forEach((enemy) => {
                 if(enemyCast[enemy.gameID] && enemyCast[enemy.gameID].visibility) {
                     oec[enemy.id] = enemyCast[enemy.gameID];
                 }
             });
-            setOtherEnemyCastTable(oec);
+            sOR(prevState => ({
+                ...prevState,
+                enemyCastTable: oec,
+            }));
         }
-    }, [enemyCast, otherEnemyNPCs]);
+    }, [enemyCast, oR.enemyNPCs]);
 
     //enemy Cast Filter 적용
     useEffect(() => {
         if(enemyCastFilter) {
             const ecf = {};
-            enemyNPCs.forEach((enemy) => {
+            R.enemyNPCs.forEach((enemy) => {
                 if(enemyCastFilter[enemy.gameID]) {
                     ecf[enemy.id] = enemyCastFilter[enemy.gameID];
                 }
             });
-            SetEnemyCastFilter(ecf);
+            sR(prevState => ({
+                ...prevState,
+                enemyCastFilter: ecf,
+            }));
         }
     }, [enemyCastFilter]);
 
     //otherEnemy Cast Filter 적용
     useEffect(() => {
-        if(enemyCastFilter && otherEnemyNPCs){
+        if(enemyCastFilter && oR.enemyNPCs){
             const oecf = {};
-            otherEnemyNPCs.forEach((enemy) => {
+            oR.enemyNPCs.forEach((enemy) => {
                 if(enemyCastFilter[enemy.gameID]) {
                     oecf[enemy.id] = enemyCastFilter[enemy.gameID];
                 }
             });
-            SetOtherEnemyCastFilter(oecf);
+            sOR(prevState => ({
+                ...prevState,
+                enemyCastFilter: oecf,
+            }));
         }
-    }, [enemyCastFilter, otherEnemyNPCs]);
+    }, [enemyCastFilter, oR.enemyNPCs]);
 
     //Global Buff 정보를 가져옴
     useEffect( () => {
-        if(buff && globalBuff) {
+        if(R.buffTable && R.globalBuffTable) {
             const result = {}
-            Object.entries(globalBuff).forEach(([index, aura]) => {
-                const findBuff = Object.entries(buff).find(([idx, ar]) => idx === index);
+            Object.entries(R.globalBuffTable).forEach(([index, aura]) => {
+                const findBuff = Object.entries(R.buffTable).find(([idx, ar]) => idx === index);
                 if (!findBuff) {
                     result[index] = aura;
                 }
             });
             setExternalBuff(result);
         }
-    }, [buff, globalBuff]) 
+    }, [R.buffTable, R.globalBuffTable]) 
 
     //otherGlobalBuff 정보를 가져옴
     useEffect( () => {
-        if(otherBuff && otherGlobalBuff) {
-            const result = Object.entries(otherGlobalBuff).map(([index, aura]) => {
-                const findBuff = Object.entries(otherBuff).find(([idx, ar]) => idx === index);
+        if(oR.buffTable && oR.globalBuffTable) {
+            const result = Object.entries(oR.globalBuffTable).map(([index, aura]) => {
+                const findBuff = Object.entries(oR.buffTable).find(([idx, ar]) => idx === index);
                 if (!findBuff) {
                     return aura;
                 }
             }).filter((aura) => aura !== undefined);
             setOtherExternalBuff(result);
         }
-    }, [otherBuff, otherGlobalBuff])
-
-    useEffect(() => {
-        console.log(externalBuff);
-    }, [externalBuff]);
+    }, [oR.buffTable, oR.globalBuffTable])
     
     //cast checkbox 초기화
     useEffect(() => {
-        if(cast) {
-        const initialCast = {};
-        Object.entries(cast).forEach(([index, value]) => {
-            initialCast[Number(index)] = true;
-        });
-        scf(initialCast);
+        if(R.castTable) {
+            const initialCast = {};
+            Object.entries(R.castTable).forEach(([index, value]) => {
+                initialCast[Number(index)] = true;
+            });
+            sR(prevState => ({
+                ...prevState,
+                castFilter: initialCast,
+            }));
         }
-    },[cast]);
+    },[R.castTable]);
 
     //otherCast checkbox 초기화
     useEffect(() => {
-        if(otherCast) {
+        if(oR.castTable) {
             const initialCast = {};
-            Object.entries(otherCast).forEach(([index, value]) => {
+            Object.entries(oR.castTable).forEach(([index, value]) => {
                 initialCast[index] = true;
             });
-            socf(initialCast);
+            sOR(prevState => ({
+                ...prevState,
+                castFilter: initialCast,
+            }));
         }
-    },[otherCast]);
+    },[oR.castTable]);
 
     return (
         <div style={{position:'sticky', left:0}}>
@@ -301,7 +340,7 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                 </div>
                 <div className="checkbox">
                     <div className="dropdown">
-                        <div className= {`dropdown-header ${openDropdown === 'buff' ? 'open' : ''} ${sourceID === 'ALL' ? 'disabled' : ''}`} onClick={() => handleToggle('buff')}>
+                        <div className= {`dropdown-header ${openDropdown === 'buff' ? 'open' : ''} ${R.source === 'ALL' ? 'disabled' : ''}`} onClick={() => handleToggle('buff')}>
                             Buff Filter
                             <span className={`dropdown-arrow ${openDropdown === 'buff' ? 'open' : ''}`}>▼</span>
                         </div>
@@ -309,7 +348,7 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                 </div>
                 <div className="checkbox">
                     <div className="dropdown">
-                        <div className={`dropdown-header ${openDropdown === 'globalBuff' ? 'open' : ''}  ${sourceID === 'ALL' ? 'disabled' : ''}`} onClick={() => handleToggle('globalBuff')}>
+                        <div className={`dropdown-header ${openDropdown === 'globalBuff' ? 'open' : ''}  ${R.source === 'ALL' ? 'disabled' : ''}`} onClick={() => handleToggle('globalBuff')}>
                             External Buff Filter
                             <span className={`dropdown-arrow ${openDropdown === 'globalBuff' ? 'open' : ''}`}>▼</span>
                         </div>
@@ -325,54 +364,54 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                 </div>    
             </div>
             {(openDropdown === 'enemyNPCs') && enemyCast && (
-                <div className="checkbox-grid" style = {{height: Math.ceil(enemyNPCs.length / 4) * 45}}>
+                <div className="checkbox-grid" style = {{height: Math.ceil(R.enemyNPCs.length / 4) * 45}}>
                     {enemyRenderCheckboxItems(enemyCast)}
                 </div>
             )}
-            {openDropdown === 'buff' &&  buff && (
-                <div className="checkbox-grid" style = {{height: (Math.ceil(buff.length / 4) + 1)* 45 + 
-                (otherBuff ? ((Math.ceil(otherBuff.length / 4) + 1)* 45): 0)}}>
+            {openDropdown === 'buff' &&  R.buffTable && (
+                <div className="checkbox-grid" style = {{height: (Math.ceil(R.buffTable.length / 4) + 1)* 45 + 
+                (oR.buffTable ? ((Math.ceil(oR.buffTable.length / 4) + 1)* 45): 0)}}>
                     <>
                     <div className="checkbox-text">
-                        {sourceName} Buff
+                        {R.sourceName} Buff
                     </div>
-                    {buffRenderCheckboxItems(buff, bf)}
+                    {buffRenderCheckboxItems(R.buffTable, R.buffFilter)}
                     </>
-                    {otherBuff && (
+                    {oR.buffTable && (
                         <>
                         <div className="checkbox-text">
-                            {otherSourceName} Buff
+                            {oR.sourceName} Buff
                         </div>
-                        {buffRenderCheckboxItems(otherBuff, obf)}
+                        {buffRenderCheckboxItems(oR.buffTable, oR.buffFilter)}
                         </>
                     )}
                 </div>
             )}
             {openDropdown === 'globalBuff' &&  externalBuff && (
                 <div className="checkbox-grid" style = {{height: (Math.ceil(externalBuff.length / 4) + 1)* 45 +
-                (otherGlobalBuff ? ((Math.ceil(otherExternalBuff.length / 4) + 1)* 45): 0)}}>
+                (oR.globalBuffTable ? ((Math.ceil(otherExternalBuff.length / 4) + 1)* 45): 0)}}>
                     <>
                     <div className="checkbox-text">
-                        {sourceName} External Buff
+                        {R.sourceName} External Buff
                     </div>
-                    {buffRenderCheckboxItems(externalBuff, bf)}
+                    {buffRenderCheckboxItems(externalBuff, R.buffFilter)}
                     </>
-                    {otherGlobalBuff && (
+                    {oR.globalBuffTable && (
                         <>
                         <div className="checkbox-text">
-                            {otherSourceName} External Buff
+                            {oR.sourceName} External Buff
                         </div>
-                        {buffRenderCheckboxItems(otherExternalBuff, obf)}
+                        {buffRenderCheckboxItems(otherExternalBuff, oR.buffFilter)}
                         </>
                     )}
                 </div>
             )}
-            {openDropdown === 'cast' && (cast || enemyCast) && (
+            {openDropdown === 'cast' && (R.castTable || enemyCast) && (
                 <div className="checkbox-grid" style = {{height: 0 
-                + (cast ?(Math.ceil(cast.length / 4) + 1) * 45 : 0)
-                + (otherCast ?(Math.ceil(otherCast.length/4) + 1) * 45 : 0)
+                + (R.castTable ?(Math.ceil(R.castTable.length / 4) + 1) * 45 : 0)
+                + (oR.castTable ?(Math.ceil(oR.castTable.length/4) + 1) * 45 : 0)
                 + (enemyCast ? enemyCastLength : 0)}}>
-                    {enemyCast && enemyNPCs && enemyNPCs.map((enemy) => {
+                    {enemyCast && R.enemyNPCs && R.enemyNPCs.map((enemy) => {
                         if(enemyCast[enemy.gameID] && enemyCast[enemy.gameID].visibility) {
                             return (
                                 <>
@@ -384,20 +423,20 @@ function CheckBoxdown({reportID, fight, sourceID, sourceName, otherSourceName, m
                             )
                         }
                     })}
-                    {cast && cf && (
+                    {R.castTable && R.castFilter && (
                     <>
                        <div className="checkbox-text">
-                            {sourceName} Cast
+                            {R.sourceName} Cast
                         </div>
-                        {castRenderCheckboxItems(cast, cf)}
+                        {castRenderCheckboxItems(R.castTable, R.castFilter)}
                     </> 
                     )}
-                    {otherSourceName && (
+                    {oR.castTable && oR.castFilter && (
                     <>
                         <div className="checkbox-text">
-                            {otherSourceName} Cast
+                            {oR.sourceName} Cast
                         </div>
-                        {castRenderCheckboxItems(otherCast, ocf)}
+                        {castRenderCheckboxItems(oR.castTable, oR.castFilter)}
                     </>
                     )}
                 </div>
