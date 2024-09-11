@@ -455,7 +455,7 @@ function App() {
           timeLength= {timeLength} abilityTable={report.masterAbilities} otherAbilityTable={otherReport.masterAbilities}/>
         )}
         
-        {report.source && report.enemyNPCs && (
+        {report.source && report.enemyNPCs && report.startTime&& report.endTime &&(
           <Checkboxdown R = {report} oR = {otherReport} sR = {setReport} sOR = {setOtherReport}/>
         )}
         {timeLength && chartInterval && chartLeft && report.source && (
@@ -464,7 +464,7 @@ function App() {
         {chartLeft && report.source && report.IDDict && report.enemyCastTable && report.startTime && report.endTime && (
           <BossCastTimeLine report = {report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
-        {chartLeft && otherReport.source && otherReport.IDDict && otherReport.enemyCastTable && (
+        {chartLeft && otherReport.source && otherReport.IDDict && otherReport.enemyCastTable && otherReport.startTime && otherReport.endTime && (
           <BossCastTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
         {chartLeft && report.source && report.IDDict && report.buffFilter && report.globalBuffTable && (Object.keys(report.buffFilter).length > 0) &&(
