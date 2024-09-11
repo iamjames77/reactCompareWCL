@@ -461,7 +461,7 @@ function App() {
         {timeLength && chartInterval && chartLeft && report.source && (
           <Scaling timeLength={timeLength} chartInterval={chartInterval} chartLeft={chartLeft} chartWidth = {chartWidth}/>
         )}
-        {chartLeft && report.source && report.IDDict && report.enemyCastTable && (
+        {chartLeft && report.source && report.IDDict && report.enemyCastTable && report.startTime && report.endTime && (
           <BossCastTimeLine report = {report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
         {chartLeft && otherReport.source && otherReport.IDDict && otherReport.enemyCastTable && (
