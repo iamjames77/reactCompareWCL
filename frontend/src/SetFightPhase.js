@@ -64,15 +64,15 @@ function SetFightPhase({report, SetError, setReport, existOnly}) {
             setFightStartTime(selectedFight.startTime);
             setFightEndTime(selectedFight.endTime);
             setEncounterID(selectedFight.encounterID);
-            setPhaseList(selectedFight.phaseTransitions);
+            setPhaseList(selectedFight.phaseTransitions);    
         }
     }
 
     useEffect(() => {
-        if(phaseList){
-            setPhaseOptions();
+        if(fightstartTime && fightendTime){
+            setPhaseOptions();    
         }
-    }, [report.phase, phaseList]);
+    }, [report.phase, phaseList, fightstartTime, fightendTime]);
 
     const setPhaseOptions= async () => {
         const data = await get_phase_info(report.reportID)
@@ -115,6 +115,7 @@ function SetFightPhase({report, SetError, setReport, existOnly}) {
                 }
             }            
         }
+        console.log(result);
         setPhaseIDOptions(result);
         if(report.phase){
             setInitialPhaseID(Number(report.phase));

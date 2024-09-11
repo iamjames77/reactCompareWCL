@@ -38,13 +38,6 @@ function App() {
   const [chartRight, setChartRight] = useState(20);
   const [chartWidth, setChartWidth] = useState(null);
 
-  const [enemyCastTable, setEnemyCastTable] = useState({});
-  const [otherEnemyCastTable, setOtherEnemyCastTable] = useState({});
-  const [enemyCastFilter, setEnemyCastFilter] = useState(null);
-  const [otherEnemyCastFilter, setOtherEnemyCastFilter] = useState(null);
-
-
-
   // 입력 변경 시
   const myInputChange = (event) => {
     setInputMyValue(event.target.value);
@@ -135,6 +128,7 @@ function App() {
   };
 
   useEffect(() => {
+    console.log(encounterID);
     if (encounterID && otherReport.reportID) {
       API.get_fight_data_with_encounterID(otherReport.reportID, encounterID).then(data => {
         if (data.errors) {
@@ -470,7 +464,7 @@ function App() {
         {chartLeft && report.source && report.IDDict && report.enemyCastTable && (
           <BossCastTimeLine report = {report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
-        {chartLeft && otherReport.source && otherReport.IDDict && report.otherEnemyCastTable && (
+        {chartLeft && otherReport.source && otherReport.IDDict && otherReport.enemyCastTable && (
           <BossCastTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
         {chartLeft && report.source && report.IDDict && report.buffFilter && report.globalBuffTable && (Object.keys(report.buffFilter).length > 0) &&(
