@@ -455,7 +455,7 @@ function App() {
           timeLength= {timeLength} abilityTable={report.masterAbilities} otherAbilityTable={otherReport.masterAbilities}/>
         )}
         
-        {report.source && report.enemyNPCs && report.startTime&& report.endTime &&(
+        {report.source && report.enemyNPCs && report.startTime && report.endTime && (
           <Checkboxdown R = {report} oR = {otherReport} sR = {setReport} sOR = {setOtherReport}/>
         )}
         {timeLength && chartInterval && chartLeft && report.source && (
