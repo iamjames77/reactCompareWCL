@@ -13,6 +13,7 @@ import BossCastTimeLine from './BossCastTimeLine';
 import specResource from './specResource';
 import BuffsTimeLine from './BuffsTimeLine';
 import CastsTimeLine from './CastsTimeLine';
+import ResourceTimeLine from './ResourceTimeLine';
 
 function App() {
   const [inputMyValue, setInputMyValue] = useState('');
@@ -401,11 +402,6 @@ function App() {
   }, [otherReport.startTime, otherReport.endTime, otherReport.source, type]);
 
   useEffect(() => {
-    console.log('tbfZN6Jxjycq9D8v');
-    console.log('JAjWZM1xHPyVd8g9');
-  }, []);
-
-  useEffect(() => {
     console.log(report)
   }, [report]);
 
@@ -480,10 +476,16 @@ function App() {
         {chartLeft && otherReport.source && otherReport.IDDict && otherReport.buffFilter && otherReport.globalBuffTable && (Object.keys(otherReport.buffFilter).length > 0) &&(
           <BuffsTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
+        {chartLeft && report.startTime && report.resource && (Object.keys(report.resource).length > 0) &&(
+          <ResourceTimeLine report = {report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
+        )}
+        {chartLeft && otherReport.startTime && otherReport.resource && (Object.keys(otherReport.resource).length > 0) &&(
+          <ResourceTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
+        )}
         {chartLeft && report.source && report.IDDict && report.castTable && (Object.keys(report.castFilter).length > 0) && (
           <CastsTimeLine report = {report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
-        {chartLeft && otherReport.source && otherReport.IDDict && otherReport.castTable&&(Object.keys(otherReport.CastFilter).length > 0) && (
+        {chartLeft && otherReport.source && otherReport.IDDict && otherReport.castTable &&( Object.keys(otherReport.castFilter).length > 0) && (
           <CastsTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
       </div>
