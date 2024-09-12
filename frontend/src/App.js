@@ -184,7 +184,7 @@ function App() {
     )
   }
   // Table Data
-  const getTableData = (r, f, s, t, ty,sT, eT, sR) => {
+  const getTableData = (r, f, s, t, ty,sT, eT, sp, sR) => {
     API.get_table_data(r, f, s, t, ty,sT, eT).then(async data => {
       if (data.errors) {
         console.log('123');
@@ -193,7 +193,14 @@ function App() {
       }
       const sort_sB = await addColor(data.data.reportData.report.self.data.auras.sort((a,b) => a.guid - b.guid));
       const sort_sgB = await addColor(data.data.reportData.report.global.data.auras.sort((a,b) => a.guid - b.guid));
-      const sort_sC = await addColor(data.data.reportData.report.cast.data.entries.sort((a,b) => a.guid - b.guid));
+      const sC = data.data.reportData.report.cast.data.entries.sort((a,b) => a.guid - b.guid);
+      if(sp[0].spec === 'Discipline'){
+        console.log('Discipline');
+        sC.push({name: 'Void Blast', guid:450215, abilityIcon: 'inv_cosmicvoid_missile.jpg'});
+        sC.push({name: 'Dark Reprimand', guid:400169, abilityIcon: 'inv_artifact_powerofthedarkside.jpg'});
+        sC.push({name: 'Halo', guid:120644, abilityIcon: 'ability_priest_halo_shadow.jpg'});
+      }
+      const sort_sC = await addColor(sC);
       sR(prevState => ({
         ...prevState,
         buffTable: sort_sB,
@@ -381,15 +388,15 @@ function App() {
 
   // Get Table Data
   useEffect(() => {
-    if (report.fight && report.startTime && report.endTime && report.source && (report.source !== 'ALL')) {
-      getTableData(report.reportID, report.fight, report.source, report.source, type, report.startTime, report.endTime, setReport);
+    if (report.fight && report.startTime && report.endTime && report.source && report.spec && (report.source !== 'ALL')) {
+      getTableData(report.reportID, report.fight, report.source, report.source, type, report.startTime, report.endTime, report.spec, setReport);
     }
   }, [report.startTime, report.endTime, report.source, type]);
 
   // Get Other Table Data
   useEffect(() => {
-    if (otherReport.fight && otherReport.startTime && otherReport.endTime && otherReport.source && (otherReport.source !== 'ALL')) {
-      getTableData(otherReport.reportID, otherReport.fight, otherReport.source, otherReport.source, type, otherReport.startTime, otherReport.endTime, setOtherReport);
+    if (otherReport.fight && otherReport.startTime && otherReport.endTime && otherReport.source && otherReport.spec &&(otherReport.source !== 'ALL')) {
+      getTableData(otherReport.reportID, otherReport.fight, otherReport.source, otherReport.source, type, otherReport.startTime, otherReport.endTime, otherReport.spec, setOtherReport);
     }
   }, [otherReport.startTime, otherReport.endTime, otherReport.source, type]);
 
