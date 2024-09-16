@@ -13,6 +13,7 @@ import BossCastTimeLine from './BossCastTimeLine';
 import specResource from './specResource';
 import BuffsTimeLine from './BuffsTimeLine';
 import CastsTimeLine from './CastsTimeLine';
+import ResourceTimeLine from './ResourceTimeLine';
 
 function App() {
   const [inputMyValue, setInputMyValue] = useState('');
@@ -184,7 +185,7 @@ function App() {
     )
   }
   // Table Data
-  const getTableData = (r, f, s, t, ty,sT, eT, sR) => {
+  const getTableData = (r, f, s, t, ty,sT, eT, sp, sR) => {
     API.get_table_data(r, f, s, t, ty,sT, eT).then(async data => {
       if (data.errors) {
         console.log('123');
@@ -193,7 +194,14 @@ function App() {
       }
       const sort_sB = await addColor(data.data.reportData.report.self.data.auras.sort((a,b) => a.guid - b.guid));
       const sort_sgB = await addColor(data.data.reportData.report.global.data.auras.sort((a,b) => a.guid - b.guid));
-      const sort_sC = await addColor(data.data.reportData.report.cast.data.entries.sort((a,b) => a.guid - b.guid));
+      const sC = data.data.reportData.report.cast.data.entries.sort((a,b) => a.guid - b.guid);
+      if(sp[0].spec === 'Discipline'){
+        console.log('Discipline');
+        sC.push({name: 'Void Blast', guid:450215, abilityIcon: 'inv_cosmicvoid_missile.jpg'});
+        sC.push({name: 'Dark Reprimand', guid:400169, abilityIcon: 'inv_artifact_powerofthedarkside.jpg'});
+        sC.push({name: 'Halo', guid:120644, abilityIcon: 'ability_priest_halo_shadow.jpg'});
+      }
+      const sort_sC = await addColor(sC);
       sR(prevState => ({
         ...prevState,
         buffTable: sort_sB,
@@ -381,22 +389,17 @@ function App() {
 
   // Get Table Data
   useEffect(() => {
-    if (report.fight && report.startTime && report.endTime && report.source && (report.source !== 'ALL')) {
-      getTableData(report.reportID, report.fight, report.source, report.source, type, report.startTime, report.endTime, setReport);
+    if (report.fight && report.startTime && report.endTime && report.source && report.spec && (report.source !== 'ALL')) {
+      getTableData(report.reportID, report.fight, report.source, report.source, type, report.startTime, report.endTime, report.spec, setReport);
     }
   }, [report.startTime, report.endTime, report.source, type]);
 
   // Get Other Table Data
   useEffect(() => {
-    if (otherReport.fight && otherReport.startTime && otherReport.endTime && otherReport.source && (otherReport.source !== 'ALL')) {
-      getTableData(otherReport.reportID, otherReport.fight, otherReport.source, otherReport.source, type, otherReport.startTime, otherReport.endTime, setOtherReport);
+    if (otherReport.fight && otherReport.startTime && otherReport.endTime && otherReport.source && otherReport.spec &&(otherReport.source !== 'ALL')) {
+      getTableData(otherReport.reportID, otherReport.fight, otherReport.source, otherReport.source, type, otherReport.startTime, otherReport.endTime, otherReport.spec, setOtherReport);
     }
   }, [otherReport.startTime, otherReport.endTime, otherReport.source, type]);
-
-  useEffect(() => {
-    console.log('tbfZN6Jxjycq9D8v');
-    console.log('JAjWZM1xHPyVd8g9');
-  }, []);
 
   useEffect(() => {
     console.log(report)
@@ -473,10 +476,16 @@ function App() {
         {chartLeft && otherReport.source && otherReport.IDDict && otherReport.buffFilter && otherReport.globalBuffTable && (Object.keys(otherReport.buffFilter).length > 0) &&(
           <BuffsTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
+        {chartLeft && report.startTime && report.resource && (Object.keys(report.resource).length > 0) &&(
+          <ResourceTimeLine report = {report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
+        )}
+        {chartLeft && otherReport.startTime && otherReport.resource && (Object.keys(otherReport.resource).length > 0) &&(
+          <ResourceTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
+        )}
         {chartLeft && report.source && report.IDDict && report.castTable && (Object.keys(report.castFilter).length > 0) && (
           <CastsTimeLine report = {report} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
-        {chartLeft && otherReport.source && otherReport.IDDict && otherReport.castTable&&(Object.keys(otherReport.CastFilter).length > 0) && (
+        {chartLeft && otherReport.source && otherReport.IDDict && otherReport.castTable &&( Object.keys(otherReport.castFilter).length > 0) && (
           <CastsTimeLine report = {otherReport} chartLeft = {chartLeft} chartInterval={chartInterval} chartRight = {chartRight} chartWidth ={chartWidth} SetError={setError}/>
         )}
       </div>
