@@ -82,7 +82,7 @@ function SetSourceTarget({report, SetError, setReport, type, existOnly}) {
             }
             setReport(prevState => ({
                 ...prevState,
-                source: Number(selectedSource.id),
+                source: selectedSource.id,
                 sourceName: selectedSource.name,
                 class: selectedSource.type,
                 spec: selectedSource.specs,
