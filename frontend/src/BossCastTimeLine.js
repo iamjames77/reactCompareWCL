@@ -50,7 +50,7 @@ function BossCastTimeLine({report, SetError, chartLeft, chartInterval, chartRigh
             }
         };
         getEventData();
-    },[report.enemyCastTable]);
+    },[report.enemyCastTable, report.startTime, report.endTime]);
 
     return (
         <div>
